@@ -1,4 +1,4 @@
-# 🎯 Cursor IDE Installer
+# 🎯 Cursor Update v1.0
 
 > **Professional Ubuntu Installer & Version Manager for Cursor IDE**
 
@@ -11,12 +11,15 @@ A comprehensive, standalone script that downloads, installs, and manages Cursor 
 - **Multiple Architecture Support**: x64 and ARM64 compatible
 - **Dependency Management**: Automatically installs required system dependencies
 - **AppImage Integration**: Full AppImage support with libfuse2 handling
+- **System Integration**: Installs script as `cursor-update` command system-wide
 
 ### 🔧 **Advanced Version Management**
 - **Download Multiple Versions**: Keep different Cursor versions locally
 - **Switch Between Versions**: Easily change active Cursor version
 - **Version Caching**: Smart caching system for faster operations
 - **Backup System**: Automatic backup of previous installations
+- **Auto-Update Detection**: Automatically checks for Cursor and script updates
+- **Smart Update Process**: Closes Cursor, updates, and reopens automatically
 
 ### 🖥️ **Desktop Integration**
 - **Application Menu Entry**: Creates proper desktop shortcuts
@@ -29,6 +32,8 @@ A comprehensive, standalone script that downloads, installs, and manages Cursor 
 - **Conflict Detection**: Identifies and manages existing installations
 - **Rollback Support**: Backup and restore capabilities
 - **Debug Mode**: Comprehensive logging for troubleshooting
+- **Current Version Display**: Shows installed Cursor version on script startup
+- **Self-Update Capability**: Script can update itself to latest version
 
 ## 📋 Requirements
 
@@ -48,21 +53,63 @@ A comprehensive, standalone script that downloads, installs, and manages Cursor 
 
 ## 🚀 Quick Start
 
-### One-Line Installation
+### 🚀 One-Line Installation (Recommended)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/main/install-cursor.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh | bash
 ```
+
+> **💡 Tip:** This is the fastest and safest method - similar to `curl -fsSL https://ollama.com/install.sh | sh`
 
 ### Manual Installation
 ```bash
 # Download the script
-wget https://raw.githubusercontent.com/jwillians/cursor-update/main/install-cursor.sh
+wget https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh
 
 # Make it executable
-chmod +x install-cursor.sh
+chmod +x cursor-update.sh
 
 # Run the installer
-./install-cursor.sh
+./cursor-update.sh
+```
+
+## 🔗 How Curl Installation Works
+
+### 🌐 Direct GitHub URL
+Yes! You can use curl directly from a GitHub URL without any problems:
+
+```bash
+# Standard method (recommended)
+curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh | bash
+
+# Or specific version using tags
+curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/v1.0.0/cursor-update.sh | bash
+```
+
+### 🆚 GitHub vs Gist
+
+| Feature | GitHub Raw | GitHub Gist |
+|---------|------------|-------------|
+| ✅ **Versioning** | Complete (tags, branches) | Limited |
+| ✅ **Issues/Bugs** | Yes | No |
+| ✅ **Documentation** | Full README | Basic |
+| ✅ **Collaboration** | Pull Requests | Simple forks |
+| ✅ **Releases** | Official tags | No |
+| ✅ **Statistics** | Views, stars, etc | Limited |
+
+**Recommendation:** Use GitHub for projects like this - it's more professional and offers better control.
+
+### 🔐 Installation Security
+
+```bash
+# For enhanced security, you can:
+# 1. First download and review the script
+curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh -o cursor-update.sh
+
+# 2. Verify the content
+cat cursor-update.sh | head -50
+
+# 3. Execute only if you trust it
+bash cursor-update.sh
 ```
 
 ## 📖 Usage
@@ -70,7 +117,9 @@ chmod +x install-cursor.sh
 ### Interactive Mode
 Simply run the script and follow the interactive prompts:
 ```bash
-./install-cursor.sh
+./cursor-update.sh
+# Or if installed system-wide:
+cursor-update
 ```
 
 **Available options:**
@@ -89,7 +138,8 @@ The script also supports direct version management:
 python3 <(curl -s https://raw.githubusercontent.com/jwillians/cursor-update/main/install-cursor.sh | grep -A 1000 "create_python_installer" | grep -B 1000 "echo.*temp_script") list
 
 # Install specific version
-./install-cursor.sh  # Choose option 4, then enter version
+./cursor-update.sh  # Choose option 4, then enter version
+# Or: cursor-update  # If installed system-wide
 ```
 
 ## 🎮 After Installation
@@ -99,13 +149,33 @@ python3 <(curl -s https://raw.githubusercontent.com/jwillians/cursor-update/main
 - **Terminal**: Type `cursor`
 - **Direct**: Run `/opt/cursor.appimage`
 
-### Version Management
+### Version Management & Auto-Updates
+
+#### 🚀 Quick Management (System Command)
+```bash
+# Run the installed system command
+cursor-update
+
+# The script will automatically:
+# 1. Show current Cursor version
+# 2. Check for script updates 
+# 3. Check for Cursor updates
+# 4. Offer to update with auto-restart
+```
+
+#### 🔄 Auto-Update Features
+- **Script Self-Update**: Automatically detects and offers to update the script itself
+- **Cursor Update Detection**: Shows available Cursor updates on startup
+- **Smart Process Management**: Safely closes Cursor, updates, and reopens automatically
+- **Version Display**: Always shows your current Cursor version
+
+#### 📋 Manual Version Commands
 ```bash
 # Check active version
 cursor --version
 
-# Switch versions (re-run installer and choose option 4)
-./install-cursor.sh
+# Manual version management
+cursor-update  # Interactive mode with all options
 ```
 
 ## 🐛 Troubleshooting
@@ -160,6 +230,7 @@ DEBUG=1 ./install-cursor.sh
 - **Desktop Entry**: `/usr/share/applications/cursor.desktop`
 - **Icon**: `/usr/share/pixmaps/cursor.png`
 - **Shell Command**: `/usr/local/bin/cursor`
+- **Update Script**: `/usr/local/bin/cursor-update`
 - **Version Cache**: `~/.local/share/cursor-installer/`
 
 ### Customization

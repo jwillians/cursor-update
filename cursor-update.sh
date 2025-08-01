@@ -20,8 +20,10 @@ debug_log() {
 }
 
 # Version and metadata
-INSTALLER_VERSION="2.2.1"
-SCRIPT_NAME="Cursor IDE Installer"
+INSTALLER_VERSION="1.0.0"
+SCRIPT_NAME="Cursor Update"
+SCRIPT_URL="https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh"
+SYSTEM_SCRIPT_PATH="/usr/local/bin/cursor-update"
 
 # Color definitions
 RED='\033[0;31m'
@@ -40,6 +42,15 @@ print_header() {
     echo -e "${BOLD}${CYAN}================================================================${NC}"
     echo -e "${BOLD}${CYAN}    🎯 ${SCRIPT_NAME} v${INSTALLER_VERSION}${NC}"
     echo -e "${BOLD}${CYAN}    Professional Ubuntu Installer & Version Manager${NC}"
+    echo -e "${BOLD}${CYAN}================================================================${NC}"
+    
+    # Show current Cursor version if available
+    local current_cursor=$(get_current_cursor_version)
+    if [[ -n "$current_cursor" ]]; then
+        echo -e "${BOLD}${GREEN}    📍 Current Cursor Version: v${current_cursor}${NC}"
+    else
+        echo -e "${BOLD}${YELLOW}    📍 No Cursor installation detected${NC}"
+    fi
     echo -e "${BOLD}${CYAN}================================================================${NC}"
     echo
 }
@@ -67,6 +78,271 @@ print_step() {
 # Utility functions
 command_exists() {
     command -v "$1" >/dev/null 2>&1
+}
+
+# Get currently installed Cursor version
+get_current_cursor_version() {
+    local current_version=""
+    
+    # Try different methods to get version
+    if [[ -f "/opt/cursor.appimage" ]]; then
+        # Try to get version from the AppImage
+        current_version=$(timeout 5 /opt/cursor.appimage --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    fi
+    
+    # Fallback: check active symlink if managed by this script
+    if [[ -z "$current_version" ]]; then
+        local cursor_dir="$HOME/.local/share/cursor-installer"
+        local active_symlink="$cursor_dir/active"
+        
+        if [[ -L "$active_symlink" ]]; then
+            local target_path=$(readlink "$active_symlink")
+            current_version=$(echo "$target_path" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        fi
+    fi
+    
+    # Fallback: check for cursor command
+    if [[ -z "$current_version" ]] && command_exists cursor; then
+        current_version=$(timeout 5 cursor --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    fi
+    
+    echo "$current_version"
+}
+
+# Check if script needs self-update
+check_script_update() {
+    print_step "Checking for script updates..."
+    
+    local remote_version=""
+    local current_script_version="$INSTALLER_VERSION"
+    
+    # Get remote version
+    if command_exists curl; then
+        remote_version=$(curl -fsSL "$SCRIPT_URL" 2>/dev/null | grep '^INSTALLER_VERSION=' | head -1 | cut -d'"' -f2)
+    elif command_exists wget; then
+        remote_version=$(wget -qO- "$SCRIPT_URL" 2>/dev/null | grep '^INSTALLER_VERSION=' | head -1 | cut -d'"' -f2)
+    fi
+    
+    if [[ -n "$remote_version" && "$remote_version" != "$current_script_version" ]]; then
+        print_warning "Script update available: v$current_script_version → v$remote_version"
+        if ask_permission "Update the script to the latest version?"; then
+            update_script
+            return 0
+        fi
+    else
+        print_success "Script is up to date (v$current_script_version)"
+    fi
+    
+    return 1
+}
+
+# Update the script itself
+update_script() {
+    print_step "Updating script to latest version..."
+    
+    local temp_script="/tmp/cursor-update-new.sh"
+    
+    # Download latest version
+    if command_exists curl; then
+        curl -fsSL "$SCRIPT_URL" -o "$temp_script"
+    elif command_exists wget; then
+        wget -qO "$temp_script" "$SCRIPT_URL"
+    else
+        print_error "Neither curl nor wget available for script update"
+        return 1
+    fi
+    
+    if [[ ! -f "$temp_script" ]]; then
+        print_error "Failed to download script update"
+        return 1
+    fi
+    
+    # Make executable
+    chmod +x "$temp_script"
+    
+    # If running from system location, update it
+    if [[ -f "$SYSTEM_SCRIPT_PATH" ]]; then
+        print_info "Updating system script..."
+        sudo cp "$temp_script" "$SYSTEM_SCRIPT_PATH"
+        sudo chmod +x "$SYSTEM_SCRIPT_PATH"
+        print_success "System script updated successfully"
+        
+        # Clean up and restart with system script
+        rm -f "$temp_script"
+        print_info "Restarting with updated script..."
+        exec "$SYSTEM_SCRIPT_PATH" "$@"
+    else
+        # Replace current script if possible
+        local current_script_path="$0"
+        if [[ -w "$current_script_path" ]]; then
+            cp "$temp_script" "$current_script_path"
+            chmod +x "$current_script_path"
+            rm -f "$temp_script"
+            print_success "Script updated successfully"
+            print_info "Restarting with updated script..."
+            exec "$current_script_path" "$@"
+        else
+            print_warning "Cannot update current script (no write permission)"
+            print_info "Please re-run the updated script manually:"
+            print_info "bash $temp_script"
+            exit 0
+        fi
+    fi
+}
+
+# Install script to system
+install_script_to_system() {
+    if [[ -f "$SYSTEM_SCRIPT_PATH" ]]; then
+        print_info "Script already installed at $SYSTEM_SCRIPT_PATH"
+        return 0
+    fi
+    
+    print_step "Installing script to system..."
+    
+    if ask_permission "Install cursor-update command system-wide?"; then
+        local current_script="$0"
+        
+        # If we're running from a temp location (curl pipe), download the script properly
+        if [[ "$current_script" == "/dev/fd/"* ]] || [[ "$current_script" == "/proc/self/fd/"* ]]; then
+            print_info "Downloading script for system installation..."
+            local temp_script="/tmp/cursor-update.sh"
+            
+            if command_exists curl; then
+                curl -fsSL "$SCRIPT_URL" -o "$temp_script"
+            elif command_exists wget; then
+                wget -qO "$temp_script" "$SCRIPT_URL"
+            else
+                print_error "Cannot download script for system installation"
+                return 1
+            fi
+            
+            current_script="$temp_script"
+            chmod +x "$current_script"
+        fi
+        
+        # Copy to system location
+        sudo cp "$current_script" "$SYSTEM_SCRIPT_PATH"
+        sudo chmod +x "$SYSTEM_SCRIPT_PATH"
+        
+        # Clean up temp file if we created one
+        if [[ "$current_script" == "/tmp/cursor-update.sh" ]]; then
+            rm -f "$current_script"
+        fi
+        
+        print_success "Script installed successfully!"
+        print_info "You can now run: cursor-update"
+        
+        return 0
+    fi
+    
+    return 1
+}
+
+# Check for Cursor updates and offer auto-update
+check_cursor_update() {
+    local current_version="$1"
+    
+    if [[ -z "$current_version" ]]; then
+        print_info "No current Cursor installation detected"
+        return 1
+    fi
+    
+    print_step "Checking for Cursor updates..."
+    print_info "Current Cursor version: v$current_version"
+    
+    # Create Python installer to check latest version
+    local temp_script="/tmp/cursor_version_check_$$.py"
+    create_python_installer > /dev/null
+    local python_installer=$(create_python_installer)
+    
+    # Get latest available version
+    local latest_version=""
+    if [[ -f "$python_installer" ]]; then
+        latest_version=$(timeout 30 python3 "$python_installer" list 2>/dev/null | head -10 | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | sed 's/v//')
+        rm -f "$python_installer"
+    fi
+    
+    if [[ -n "$latest_version" && "$latest_version" != "$current_version" ]]; then
+        print_warning "Cursor update available: v$current_version → v$latest_version"
+        
+        # Check if Cursor is currently running
+        local cursor_running=false
+        local cursor_processes=$(ps aux | grep -E '(/cursor\.appimage|/Cursor.*\.AppImage|cursor --no-sandbox)' | grep -v grep | grep -v "install-cursor.sh" | wc -l)
+        
+        if [[ "$cursor_processes" -gt 0 ]]; then
+            cursor_running=true
+            print_info "Cursor is currently running"
+        fi
+        
+        if ask_permission "Update Cursor to v$latest_version now?"; then
+            # If Cursor is running, offer to close and reopen
+            local should_reopen=false
+            if [[ "$cursor_running" == true ]]; then
+                if ask_permission "Close Cursor, update, and reopen automatically?"; then
+                    should_reopen=true
+                    print_info "Closing Cursor..."
+                    
+                    # Close Cursor gracefully
+                    local cursor_pids=$(ps aux | grep -E '(/cursor\.appimage|/Cursor.*\.AppImage|cursor --no-sandbox)' | grep -v grep | grep -v "install-cursor.sh" | awk '{print $2}')
+                    for pid in $cursor_pids; do
+                        if [[ -n "$pid" ]]; then
+                            kill -TERM "$pid" 2>/dev/null || true
+                        fi
+                    done
+                    
+                    sleep 3
+                    
+                    # Force kill if still running
+                    cursor_pids=$(ps aux | grep -E '(/cursor\.appimage|/Cursor.*\.AppImage|cursor --no-sandbox)' | grep -v grep | grep -v "install-cursor.sh" | awk '{print $2}')
+                    for pid in $cursor_pids; do
+                        if [[ -n "$pid" ]]; then
+                            kill -KILL "$pid" 2>/dev/null || true
+                        fi
+                    done
+                    
+                    print_success "Cursor closed successfully"
+                fi
+            fi
+            
+            # Perform the update
+            print_step "Updating Cursor to v$latest_version..."
+            local python_installer=$(create_python_installer)
+            
+            if python3 "$python_installer" install "$latest_version"; then
+                rm -f "$python_installer"
+                print_success "Cursor updated successfully to v$latest_version!"
+                
+                # Reopen Cursor if requested
+                if [[ "$should_reopen" == true ]]; then
+                    print_info "Reopening Cursor..."
+                    sleep 2
+                    
+                    # Try different ways to launch Cursor
+                    if command_exists cursor; then
+                        nohup cursor > /dev/null 2>&1 &
+                    elif [[ -f "/opt/cursor.appimage" ]]; then
+                        nohup /opt/cursor.appimage > /dev/null 2>&1 &
+                    fi
+                    
+                    print_success "Cursor reopened successfully!"
+                fi
+                
+                return 0
+            else
+                rm -f "$python_installer"
+                print_error "Failed to update Cursor"
+                return 1
+            fi
+        fi
+    else
+        if [[ -n "$latest_version" ]]; then
+            print_success "Cursor is up to date (v$current_version)"
+        else
+            print_warning "Could not check for Cursor updates (network issue?)"
+        fi
+    fi
+    
+    return 1
 }
 
 ask_permission() {
@@ -695,7 +971,7 @@ class CursorInstaller:
         """Initialize the installer with session and directories."""
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Cursor-Installer/2.2.1 (Ubuntu)'
+            'User-Agent': 'Cursor-Update/1.0.0 (Ubuntu)'
         })
         
         # Create directories
@@ -1805,12 +2081,19 @@ show_post_install_info() {
     echo "  • Run 'cursor' from terminal"
     echo "  • Use '/opt/cursor.appimage' directly"
     echo
+    if [[ -f "$SYSTEM_SCRIPT_PATH" ]]; then
+        print_info "Version management commands available:"
+        echo "  • Run 'cursor-update' for interactive management"
+        echo "  • The script will auto-check for updates when you run it"
+        echo "  • Automatic Cursor close/reopen during updates"
+    else
+        print_info "For version management, you can install the script system-wide:"
+        echo "  curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh | bash"
+    fi
+    echo
     print_info "If the icon doesn't appear in the menu, try logging out and logging back in, or run 'update-desktop-database /usr/share/applications/'"
     echo
-    print_info "For version management, download this script and run:"
-    echo "  bash install-cursor.sh"
-    echo
-    print_info "Report issues at: https://github.com/your-repo/cursor-installer"
+    print_info "Report issues at: https://github.com/jwillians/cursor-update"
     echo
     print_info "If you encounter namespace or sandbox errors when running the AppImage, try:"
     echo "  sysctl -w user.unprivileged_userns_clone=1"
@@ -1838,6 +2121,21 @@ main() {
     
     # Show header
     print_header
+    
+    # Check for script updates (non-blocking)
+    if ! check_script_update 2>/dev/null; then
+        debug_log "Script update check completed or skipped"
+    fi
+    echo
+    
+    # Check for Cursor updates if already installed
+    current_cursor_version=$(get_current_cursor_version)
+    if [[ -n "$current_cursor_version" ]]; then
+        if ! check_cursor_update "$current_cursor_version" 2>/dev/null; then
+            debug_log "Cursor update check completed or skipped"
+        fi
+        echo
+    fi
     
     # Welcome message
     print_info "This installer will download and install Cursor IDE on your Ubuntu system."
@@ -1888,8 +2186,14 @@ main() {
     print_info "🧹 Final cleanup: Ensuring old desktop entries are removed..."
     cleanup_old_desktop_entries
     
-    print_info "🚀 Step 5/5: Running installation..."
+    print_info "🚀 Step 5/6: Running installation..."
     run_installation
+    
+    print_info "🔧 Step 6/6: Installing script to system..."
+    if ! install_script_to_system; then
+        debug_log "Script system installation skipped or failed"
+    fi
+    echo
     
     print_success "All done! Enjoy using Cursor IDE! 🎉"
 }

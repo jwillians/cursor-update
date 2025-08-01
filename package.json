@@ -1,0 +1,47 @@
+{
+  "name": "cursor-update",
+  "version": "1.0.0",
+  "description": "Professional Ubuntu Installer & Version Manager for Cursor IDE",
+  "main": "cursor-update.sh",
+  "scripts": {
+    "test": "shellcheck cursor-update.sh",
+    "install": "./cursor-update.sh",
+    "update": "./cursor-update.sh",
+    "version": "echo v1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jwillians/cursor-update.git"
+  },
+  "keywords": [
+    "cursor",
+    "ide",
+    "installer",
+    "ubuntu",
+    "linux",
+    "appimage",
+    "version-manager",
+    "ai-editor"
+  ],
+  "author": "jwillians",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jwillians/cursor-update/issues"
+  },
+  "homepage": "https://github.com/jwillians/cursor-update#readme",
+  "engines": {
+    "bash": ">=4.0",
+    "python": ">=3.8"
+  },
+  "os": [
+    "linux"
+  ],
+  "directories": {
+    "doc": "."
+  },
+  "files": [
+    "cursor-update.sh",
+    "README.md",
+    "CHANGELOG.md"
+  ]
+}
