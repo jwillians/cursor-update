@@ -301,13 +301,13 @@ check_existing_installations() {
     
     # Check for running Cursor processes (more specific detection)
     # Look for actual Cursor IDE processes, not just any process with "cursor" in name
-    # Exclude debug version at /home/jwillians/Downloads/Cursor-1.3.6-x86_64.AppImage
-    local cursor_processes=$(ps aux | grep -E '(/cursor\.appimage|/Cursor.*\.AppImage|cursor --no-sandbox)' | grep -v grep | grep -v "install-cursor.sh" | grep -v "/home/jwillians/Downloads/Cursor-1.3.6-x86_64.AppImage")
+    # Exclude debug version ./Cursor-1.3.6-x86_64.AppImage --no-sandbox
+    local cursor_processes=$(ps aux | grep -E '(/cursor\.appimage|/Cursor.*\.AppImage|cursor --no-sandbox)' | grep -v grep | grep -v "install-cursor.sh" | grep -v "Cursor-1.3.6-x86_64.AppImage --no-sandbox")
     local cursor_check=$(echo "$cursor_processes" | wc -l)
     if [[ "$cursor_check" -gt 0 && -n "$(echo "$cursor_processes" | tr -d '[:space:]')" ]]; then
         local cursor_pids=$(echo "$cursor_processes" | awk '{print $2}' | tr '\n' ' ')
         running_processes+=("Running Cursor IDE processes found (PIDs: $cursor_pids)")
-        print_info "🐛 DEBUG: Excluding debug version /home/jwillians/Downloads/Cursor-1.3.6-x86_64.AppImage from process detection"
+        print_info "🐛 DEBUG: Excluding debug version ./Cursor-1.3.6-x86_64.AppImage --no-sandbox from process detection"
     fi
     
     # Check common installation locations
@@ -385,7 +385,7 @@ check_existing_installations() {
     local unique_installations=()
     for installation in "${existing_installations[@]}"; do
         # Skip our own managed installations, system temp files, and DEBUG VERSION
-        if [[ "$installation" != *"cursor-installer/versions"* ]] && [[ "$installation" != "/opt/cursor.appimage" ]] && [[ "$installation" != *"/tmp/.mount_cursor"* ]] && [[ "$installation" != *"/home/jwillians/Downloads/Cursor-1.3.6-x86_64.AppImage"* ]]; then
+        if [[ "$installation" != *"cursor-installer/versions"* ]] && [[ "$installation" != "/opt/cursor.appimage" ]] && [[ "$installation" != *"/tmp/.mount_cursor"* ]] && [[ "$installation" != *"Cursor-1.3.6-x86_64.AppImage"* ]]; then
             # Extract base path without status info
             local base_path=$(echo "$installation" | sed 's/ (Currently running)//' | sed 's/ (Version:.*//')
             
@@ -406,7 +406,7 @@ check_existing_installations() {
                 # Found but this one has "Currently running" status, replace
                 unique_installations[$found_index]="$installation"
             fi
-        elif [[ "$installation" == *"/home/jwillians/Downloads/Cursor-1.3.6-x86_64.AppImage"* ]]; then
+        elif [[ "$installation" == *"Cursor-1.3.6-x86_64.AppImage"* ]]; then
             print_info "🐛 DEBUG: Protecting debug version from removal: $installation"
         fi
     done
@@ -419,7 +419,12 @@ check_existing_installations() {
         done
         echo
         
-        if ask_permission "Stop all Cursor processes before installation?"; then
+        # Check if debug version is running
+        local has_debug_version=$(ps aux | grep -E "Cursor-1.3.6-x86_64.AppImage --no-sandbox" | grep -v grep | wc -l)
+        if [[ "$has_debug_version" -gt 0 ]]; then
+            print_warning "Debug version detected - skipping process termination to protect your work"
+            print_info "Installation will continue with Cursor running"
+        elif ask_permission "Stop all Cursor processes before installation?" "n"; then
             print_info "Stopping Cursor processes..."
             
             # Get specific cursor PIDs using the same detection as above
@@ -439,7 +444,7 @@ check_existing_installations() {
                 sleep 3
                 
                 # Check which processes are still running and force kill (exclude debug version)
-                local remaining_cursor_processes=$(ps aux | grep -E '(/cursor\.appimage|/Cursor.*\.AppImage|cursor --no-sandbox)' | grep -v grep | grep -v "install-cursor.sh" | grep -v "/home/jwillians/Downloads/Cursor-1.3.6-x86_64.AppImage")
+                local remaining_cursor_processes=$(ps aux | grep -E '(/cursor\.appimage|/Cursor.*\.AppImage|cursor --no-sandbox)' | grep -v grep | grep -v "install-cursor.sh" | grep -v "Cursor-1.3.6-x86_64.AppImage --no-sandbox")
                 local remaining_pids=($(echo "$remaining_cursor_processes" | awk '{print $2}' | tr '\n' ' '))
                 if [[ ${#remaining_pids[@]} -gt 0 ]]; then
                     print_info "Force stopping ${#remaining_pids[@]} remaining processes..."
@@ -453,7 +458,7 @@ check_existing_installations() {
                 fi
                 
                 # Final verification (exclude debug version)
-                local final_cursor_processes=$(ps aux | grep -E '(/cursor\.appimage|/Cursor.*\.AppImage|cursor --no-sandbox)' | grep -v grep | grep -v "install-cursor.sh" | grep -v "/home/jwillians/Downloads/Cursor-1.3.6-x86_64.AppImage")
+                local final_cursor_processes=$(ps aux | grep -E '(/cursor\.appimage|/Cursor.*\.AppImage|cursor --no-sandbox)' | grep -v grep | grep -v "install-cursor.sh" | grep -v "Cursor-1.3.6-x86_64.AppImage --no-sandbox")
                 local final_check=($(echo "$final_cursor_processes" | awk '{print $2}' | tr '\n' ' '))
                 if [[ ${#final_check[@]} -gt 0 ]]; then
                     print_warning "Some Cursor processes may still be running (${#final_check[@]} processes)"
@@ -699,6 +704,35 @@ class CursorInstaller:
         except Exception as e:
             self.print_warning(f"Could not save cache: {e}")
 
+    def get_latest_version_from_api(self) -> Dict[str, str]:
+        """Get the latest version info from Cursor's official API."""
+        arch = self.detect_architecture()
+        platform = 'linux-x64' if arch == 'x64' else 'linux-arm64'
+        
+        try:
+            api_url = f"https://www.cursor.com/api/download?platform={platform}&releaseTrack=stable"
+            self.print_info(f"🔍 Fetching latest version from official API: {api_url}")
+            
+            response = self.session.get(api_url, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            download_url = data.get('downloadUrl')
+            version_str = data.get('version')
+            
+            if download_url and version_str:
+                self.print_success(f"Found latest version from API: v{version_str}")
+                return {
+                    'version': version_str,
+                    'tag_name': f"v{version_str}",
+                    'published_at': 'Latest',
+                    'download_url': download_url
+                }
+        except Exception as e:
+            self.print_warning(f"API request failed: {e}")
+        
+        return None
+
     def discover_versions_by_probing(self) -> List[Dict[str, str]]:
         """Discover available versions by probing Cursor's download URLs dynamically."""
         arch = self.detect_architecture()
@@ -707,7 +741,12 @@ class CursorInstaller:
         
         discovered_versions = []
         
-        self.print_info("🔍 Dynamic version discovery - testing for latest 10+ versions")
+        # First, try to get the latest version from the official API
+        latest_from_api = self.get_latest_version_from_api()
+        if latest_from_api:
+            discovered_versions.append(latest_from_api)
+        
+        self.print_info("🔍 Dynamic version discovery - testing for more versions")
         self.print_info(f"Architecture: {arch} ({arch_path}, {arch_suffix})")
         
         # URL patterns to test (in order of preference)
@@ -717,32 +756,55 @@ class CursorInstaller:
             f"https://downloads.cursor.com/linux/{arch_path}/Cursor-{{version}}-{arch_suffix}.AppImage"
         ]
         
-        # Version series to test (from newest to oldest)
-        version_series = [
-            # Start with current known versions and probe higher
-            {"major": 1, "minor": 4, "patch_range": range(0, 15)}, # 1.4.0 - 1.4.14
-            {"major": 1, "minor": 3, "patch_range": range(4, 25)}, # 1.3.4 - 1.3.24
-            {"major": 1, "minor": 2, "patch_range": range(0, 10)}, # 1.2.0 - 1.2.9
-            {"major": 1, "minor": 1, "patch_range": range(0, 10)}, # 1.1.0 - 1.1.9
-        ]
-        
-        for series in version_series:
-            # All series use patch_range (simplified)
-            for patch in series["patch_range"]:
-                version = f"{series['major']}.{series['minor']}.{patch}"
-                if self._test_version(version, url_patterns, arch_path, arch_suffix):
-                    discovered_versions.append({
-                        'version': version,
-                        'tag_name': f"v{version}",
-                        'published_at': 'Available',
-                        'download_url': self._get_working_url(version, url_patterns, arch_path, arch_suffix)
-                    })
-                    self.print_info(f"  ✓ Found {version}")
-                    if len(discovered_versions) >= 12:  # Get 12 to ensure we have 10 good ones after sorting
-                        break
+        # Only do extensive probing if we don't have the API version
+        if not latest_from_api:
+            self.print_warning("API failed, falling back to probing method...")
+            # Version series to test (from newest to oldest, more realistic ranges)
+            version_series = [
+                # Start with known working versions around 1.3.6
+                {"major": 1, "minor": 3, "patch_range": range(0, 10)}, # 1.3.0 - 1.3.9
+                {"major": 1, "minor": 2, "patch_range": range(0, 10)}, # 1.2.0 - 1.2.9  
+                {"major": 1, "minor": 1, "patch_range": range(0, 10)}, # 1.1.0 - 1.1.9
+                {"major": 1, "minor": 0, "patch_range": range(0, 10)}, # 1.0.0 - 1.0.9
+            ]
             
-            if len(discovered_versions) >= 12:
-                break
+            for series in version_series:
+                # All series use patch_range (simplified)
+                for patch in series["patch_range"]:
+                    version = f"{series['major']}.{series['minor']}.{patch}"
+                    if self._test_version(version, url_patterns, arch_path, arch_suffix):
+                        discovered_versions.append({
+                            'version': version,
+                            'tag_name': f"v{version}",
+                            'published_at': 'Available',
+                            'download_url': self._get_working_url(version, url_patterns, arch_path, arch_suffix)
+                        })
+                        self.print_info(f"  ✓ Found {version}")
+                        if len(discovered_versions) >= 12:  # Get 12 to ensure we have 10 good ones after sorting
+                            break
+                
+                if len(discovered_versions) >= 12:
+                    break
+        else:
+            # We have the latest from API, just probe a few known stable versions for completeness
+            self.print_info("API provided latest version, probing for a few more stable versions...")
+            recent_versions = [
+                "1.3.6", "1.3.5", "1.3.4", "1.3.3", "1.3.2", "1.3.1", "1.3.0",
+                "1.2.9", "1.2.8", "1.2.7"
+            ]
+            for version in recent_versions:
+                if self._test_version(version, url_patterns, arch_path, arch_suffix):
+                    # Check if we already have this version from API
+                    if not any(v['version'] == version for v in discovered_versions):
+                        discovered_versions.append({
+                            'version': version,
+                            'tag_name': f"v{version}",
+                            'published_at': 'Available',
+                            'download_url': self._get_working_url(version, url_patterns, arch_path, arch_suffix)
+                        })
+                        self.print_info(f"  ✓ Found {version}")
+                if len(discovered_versions) >= 8:  # Limit when we have API version
+                    break
         
         # Sort by version (newest first) and limit to top 10
         try:
@@ -764,12 +826,13 @@ class CursorInstaller:
         return discovered_versions
     
     def _test_version(self, version: str, url_patterns: List[str], arch_path: str, arch_suffix: str) -> bool:
-        """Test if a specific version exists using any of the URL patterns."""
+        """Test if a specific version exists and is downloadable using any of the URL patterns."""
         for pattern in url_patterns:
             test_url = pattern.format(version=version)
             try:
                 response = self.session.head(test_url, timeout=4)  # Faster timeout
-                if response.status_code in [200, 301, 302, 403]:  # Consider redirects and auth as valid
+                # Only consider 200 and redirects as valid, NOT 403 (Forbidden)
+                if response.status_code in [200, 301, 302]:
                     return True
             except Exception:
                 continue
@@ -781,7 +844,8 @@ class CursorInstaller:
             test_url = pattern.format(version=version)
             try:
                 response = self.session.head(test_url, timeout=4)  # Faster timeout
-                if response.status_code in [200, 301, 302, 403]:
+                # Only return URLs that are actually downloadable (not 403)
+                if response.status_code in [200, 301, 302]:
                     return test_url
             except Exception:
                 continue
@@ -827,28 +891,57 @@ class CursorInstaller:
         self.print_info("  • Cursor download server changes")
         self.print_info("  • Firewall/proxy blocking requests")
         
-        # Emergency fallback to most likely current versions
-        arch = self.detect_architecture()
-        arch_path = 'x64' if arch == 'x64' else 'arm64'
-        arch_suffix = 'x86_64' if arch == 'x64' else 'arm64'
+        # Emergency fallback - try API once more, then hardcoded versions
+        self.print_info("🆘 Attempting emergency API call...")
+        emergency_api_version = self.get_latest_version_from_api()
         
-        emergency_versions = [
-            ("1.3.6", f"https://downloads.cursor.com/production/latest/linux/{arch_path}/Cursor-1.3.6-{arch_suffix}.AppImage"),
-            ("1.3.5", f"https://downloads.cursor.com/production/latest/linux/{arch_path}/Cursor-1.3.5-{arch_suffix}.AppImage"),
-            ("1.3.4", f"https://downloads.cursor.com/production/bfb7c44bcb74430be0a6dd5edf885489879f2a2e/linux/{arch_path}/Cursor-1.3.4-{arch_suffix}.AppImage"),
-        ]
+        emergency_versions = []
+        if emergency_api_version:
+            emergency_versions.append(emergency_api_version)
+            self.print_success("Emergency API call succeeded!")
+        else:
+            # Last resort hardcoded versions with API URLs when possible
+            arch = self.detect_architecture()
+            platform = 'linux-x64' if arch == 'x64' else 'linux-arm64'
+            
+            hardcoded_versions = [
+                # Try API first, then known working versions
+                ("latest", f"https://www.cursor.com/api/download?platform={platform}&releaseTrack=stable"),
+                ("1.3.6", "https://downloads.cursor.com/linux/x64/Cursor-1.3.6-x86_64.AppImage"),
+                ("1.3.5", "https://downloads.cursor.com/linux/x64/Cursor-1.3.5-x86_64.AppImage"),
+                ("1.3.4", "https://downloads.cursor.com/linux/x64/Cursor-1.3.4-x86_64.AppImage"),
+            ]
+            
+            for ver, url in hardcoded_versions:
+                # For API URLs, try to get the real download URL
+                if 'api/download' in url:
+                    try:
+                        response = self.session.get(url, timeout=5)
+                        if response.status_code == 200:
+                            data = response.json()
+                            real_url = data.get('downloadUrl')
+                            real_version = data.get('version', ver)
+                            if real_url:
+                                emergency_versions.append({
+                                    'version': real_version,
+                                    'tag_name': f"v{real_version}",
+                                    'published_at': 'Emergency API',
+                                    'download_url': real_url
+                                })
+                                continue
+                    except Exception:
+                        pass
+                
+                # Fallback to hardcoded
+                emergency_versions.append({
+                    'version': ver,
+                    'tag_name': f"v{ver}",
+                    'published_at': 'Emergency',
+                    'download_url': url
+                })
         
-        fallback_list = []
-        for ver, url in emergency_versions:
-            fallback_list.append({
-                'version': ver,
-                'tag_name': f"v{ver}",
-                'published_at': 'Emergency',
-                'download_url': url
-            })
-        
-        self.print_info(f"Using emergency fallback with {len(fallback_list)} versions")
-        return fallback_list
+        self.print_info(f"Using emergency fallback with {len(emergency_versions)} versions")
+        return emergency_versions
 
     def list_versions(self, limit: int = 20, force_refresh: bool = False):
         """List available Cursor versions with enhanced display."""
@@ -889,8 +982,8 @@ class CursorInstaller:
         
         versions = []
         for file_path in self.DOWNLOADS_DIR.glob("*[Cc]ursor*.AppImage"):
-            # Improved regex to handle Cursor/cursor, version, optional arch suffix
-            match = re.search(r'[Cc]ursor-([^.]+(?:\.[^.]+)*?)(?:-[a-z0-9_]+)?\.AppImage$', file_path.name, re.IGNORECASE)
+            # Improved regex to handle Cursor/cursor, semantic version (x.y.z), optional arch suffix
+            match = re.search(r'[Cc]ursor-(\d+\.\d+\.\d+)(?:-[a-z0-9_]+)?\.AppImage$', file_path.name, re.IGNORECASE)
             if match:
                 version_str = match.group(1)
                 versions.append(version_str)
@@ -911,7 +1004,7 @@ class CursorInstaller:
         try:
             target_path = active_symlink.resolve()
             # Extract version from filename with improved regex
-            match = re.search(r'[Cc]ursor-([^.]+(?:\.[^.]+)*?)(?:-[a-z0-9_]+)?\.AppImage$', target_path.name, re.IGNORECASE)
+            match = re.search(r'[Cc]ursor-(\d+\.\d+\.\d+)(?:-[a-z0-9_]+)?\.AppImage$', target_path.name, re.IGNORECASE)
             if match:
                 return match.group(1)
         except Exception:
@@ -1015,7 +1108,7 @@ class CursorInstaller:
         # Find the AppImage file for this version
         matching_files = []
         for file in self.DOWNLOADS_DIR.glob("*[Cc]ursor*.AppImage"):
-            match = re.search(r'[Cc]ursor-([^.]+(?:\.[^.]+)*?)(?:-[a-z0-9_]+)?\.AppImage$', file.name, re.IGNORECASE)
+            match = re.search(r'[Cc]ursor-(\d+\.\d+\.\d+)(?:-[a-z0-9_]+)?\.AppImage$', file.name, re.IGNORECASE)
             if match and match.group(1) == version:
                 matching_files.append(file)
         
@@ -1067,7 +1160,7 @@ class CursorInstaller:
         # Find the AppImage file for this version
         matching_files = []
         for file in self.DOWNLOADS_DIR.glob("*[Cc]ursor*.AppImage"):
-            match = re.search(r'[Cc]ursor-([^.]+(?:\.[^.]+)*?)(?:-[a-z0-9_]+)?\.AppImage$', file.name, re.IGNORECASE)
+            match = re.search(r'[Cc]ursor-(\d+\.\d+\.\d+)(?:-[a-z0-9_]+)?\.AppImage$', file.name, re.IGNORECASE)
             if match and match.group(1) == version:
                 matching_files.append(file)
         
@@ -1117,7 +1210,7 @@ class CursorInstaller:
         # Find the AppImage file
         matching_files = []
         for file in self.DOWNLOADS_DIR.glob("*[Cc]ursor*.AppImage"):
-            match = re.search(r'[Cc]ursor-([^.]+(?:\.[^.]+)*?)(?:-[a-z0-9_]+)?\.AppImage$', file.name, re.IGNORECASE)
+            match = re.search(r'[Cc]ursor-(\d+\.\d+\.\d+)(?:-[a-z0-9_]+)?\.AppImage$', file.name, re.IGNORECASE)
             if match and match.group(1) == version:
                 matching_files.append(file)
         
