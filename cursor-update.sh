@@ -1,11 +1,20 @@
 #!/bin/bash
 #
-# Cursor IDE Installer - Standalone Script
-# Professional installer for Ubuntu systems
+# Cursor Update - UNOFFICIAL Installer & Version Manager
+# Professional installer and version manager for Ubuntu systems
 # 
-# Install with: curl -fsSL https://your-domain.com/install-cursor.sh | bash
-# Or download and run: bash install-cursor.sh
+# Copyright (c) 2025 jwillians
+# Licensed under MIT License - see LICENSE file for details
 #
+# ⚠️  DISCLAIMER: This is an UNOFFICIAL installer created by a fan.
+#    NOT affiliated with, endorsed by, or officially supported by
+#    Anysphere (the creators of Cursor IDE). Use at your own risk.
+#    Cursor IDE is a trademark of Anysphere.
+#
+# Install with: curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh | bash
+# Or download and run: bash cursor-update.sh
+#
+# Repository: https://github.com/jwillians/cursor-update
 # This script is completely standalone and requires no additional files.
 #
 
@@ -20,7 +29,7 @@ debug_log() {
 }
 
 # Version and metadata
-INSTALLER_VERSION="1.0.0"
+INSTALLER_VERSION="1.1.0"
 SCRIPT_NAME="Cursor Update"
 SCRIPT_URL="https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh"
 SYSTEM_SCRIPT_PATH="/usr/local/bin/cursor-update"
@@ -52,6 +61,10 @@ print_header() {
         echo -e "${BOLD}${YELLOW}    📍 No Cursor installation detected${NC}"
     fi
     echo -e "${BOLD}${CYAN}================================================================${NC}"
+    echo
+    echo -e "${BOLD}${YELLOW}⚠️  DISCLAIMER: This is an UNOFFICIAL installer created by a fan${NC}"
+    echo -e "${BOLD}${YELLOW}   NOT affiliated with Anysphere (Cursor IDE creators)${NC}"
+    echo -e "${BOLD}${YELLOW}   Use at your own risk. Cursor IDE is a trademark of Anysphere.${NC}"
     echo
 }
 
@@ -258,8 +271,61 @@ check_cursor_update() {
     # Get latest available version
     local latest_version=""
     if [[ -f "$python_installer" ]]; then
-        latest_version=$(timeout 30 python3 "$python_installer" list 2>/dev/null | head -10 | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | sed 's/v//')
+        print_info "🔍 Fetching latest Cursor version from API..."
+        # Add debug output to understand what's happening
+        local version_output=$(timeout 30 python3 "$python_installer" list 2>&1 | head -10)
+        debug_log "Version check output: $version_output"
+        
+        latest_version=$(echo "$version_output" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | sed 's/v//')
+        debug_log "Extracted latest version: $latest_version"
         rm -f "$python_installer"
+    fi
+    
+    # If no version found, try multiple API fallbacks
+    if [[ -z "$latest_version" ]]; then
+        print_info "🔄 Trying direct API fallbacks..."
+        
+        # Try official Cursor API
+        latest_version=$(curl -s "https://www.cursor.com/api/download?platform=linux-x64&releaseTrack=stable" 2>/dev/null | grep -o '"version":"[^"]*"' | sed 's/"version":"\([^"]*\)"/\1/')
+        debug_log "Official API version: $latest_version"
+        
+        # If still no version, try GitHub releases API
+        if [[ -z "$latest_version" ]]; then
+            print_info "🔄 Trying GitHub releases API..."
+            latest_version=$(curl -s "https://api.github.com/repos/getcursor/cursor/releases/latest" 2>/dev/null | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/' | sed 's/v//')
+            debug_log "GitHub API version: $latest_version"
+        fi
+        
+        # Try alternative version check by probing download URLs
+        if [[ -z "$latest_version" ]]; then
+            print_info "🔄 Probing for latest versions..."
+            # Test multiple version ranges to find latest
+            local found_version=""
+            
+            # Test 1.4.x versions first (newest)
+            for patch in {0..10}; do
+                local test_version="1.4.$patch"
+                local test_url="https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/x64/Cursor-${test_version}-x86_64.AppImage"
+                if curl -s --head "$test_url" 2>/dev/null | grep -q "200 OK"; then
+                    found_version="$test_version"
+                    debug_log "Found version by probing: $test_version"
+                fi
+            done
+            
+            # If no 1.4.x found, test 1.3.x versions
+            if [[ -z "$found_version" ]]; then
+                for patch in {9..20}; do
+                    local test_version="1.3.$patch"
+                    local test_url="https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/x64/Cursor-${test_version}-x86_64.AppImage"
+                    if curl -s --head "$test_url" 2>/dev/null | grep -q "200 OK"; then
+                        found_version="$test_version"
+                        debug_log "Found version by probing: $test_version"
+                    fi
+                done
+            fi
+            
+            latest_version="$found_version"
+        fi
     fi
     
     if [[ -n "$latest_version" && "$latest_version" != "$current_version" ]]; then
@@ -1034,7 +1100,7 @@ class CursorInstaller:
         """Initialize the installer with session and directories."""
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Cursor-Update/1.0.0 (Ubuntu)'
+            'User-Agent': 'Cursor-Update/1.1.0 (Ubuntu)'
         })
         
         # Create directories
@@ -1121,27 +1187,47 @@ class CursorInstaller:
         arch = self.detect_architecture()
         platform = 'linux-x64' if arch == 'x64' else 'linux-arm64'
         
-        try:
-            api_url = f"https://www.cursor.com/api/download?platform={platform}&releaseTrack=stable"
-            self.print_info(f"🔍 Fetching latest version from official API: {api_url}")
-            
-            response = self.session.get(api_url, timeout=10)
-            response.raise_for_status()
-            
-            data = response.json()
-            download_url = data.get('downloadUrl')
-            version_str = data.get('version')
-            
-            if download_url and version_str:
-                self.print_success(f"Found latest version from API: v{version_str}")
-                return {
-                    'version': version_str,
-                    'tag_name': f"v{version_str}",
-                    'published_at': 'Latest',
-                    'download_url': download_url
-                }
-        except Exception as e:
-            self.print_warning(f"API request failed: {e}")
+        # Try multiple API endpoints
+        api_endpoints = [
+            f"https://www.cursor.com/api/download?platform={platform}&releaseTrack=stable",
+            f"https://api.cursor.com/download?platform={platform}&releaseTrack=stable",
+            "https://api.github.com/repos/getcursor/cursor/releases/latest"
+        ]
+        
+        for api_url in api_endpoints:
+            try:
+                self.print_info(f"🔍 Fetching latest version from API: {api_url}")
+                
+                response = self.session.get(api_url, timeout=10)
+                response.raise_for_status()
+                
+                data = response.json()
+                
+                # Handle different API response formats
+                if 'downloadUrl' in data and 'version' in data:
+                    # Official Cursor API format
+                    version_str = data.get('version')
+                    download_url = data.get('downloadUrl')
+                elif 'tag_name' in data:
+                    # GitHub API format
+                    version_str = data.get('tag_name', '').replace('v', '')
+                    # Construct download URL for GitHub releases
+                    download_url = f"https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/x64/Cursor-{version_str}-x86_64.AppImage"
+                else:
+                    continue
+                
+                if version_str:
+                    self.print_success(f"Found latest version from API: v{version_str}")
+                    return {
+                        'version': version_str,
+                        'tag_name': f"v{version_str}",
+                        'published_at': 'Latest',
+                        'download_url': download_url
+                    }
+                    
+            except Exception as e:
+                self.print_warning(f"API request to {api_url} failed: {e}")
+                continue
         
         return None
 
@@ -1171,11 +1257,12 @@ class CursorInstaller:
         # Only do extensive probing if we don't have the API version
         if not latest_from_api:
             self.print_warning("API failed, falling back to probing method...")
-            # Version series to test (from newest to oldest, more realistic ranges)
+            # Version series to test (from newest to oldest, expanded ranges for latest versions)
             version_series = [
-                # Start with known working versions around 1.3.6
-                {"major": 1, "minor": 3, "patch_range": range(0, 10)}, # 1.3.0 - 1.3.9
-                {"major": 1, "minor": 2, "patch_range": range(0, 10)}, # 1.2.0 - 1.2.9  
+                # Test potential newer versions first
+                {"major": 1, "minor": 4, "patch_range": range(0, 10)}, # 1.4.0 - 1.4.9
+                {"major": 1, "minor": 3, "patch_range": range(0, 20)}, # 1.3.0 - 1.3.19 (expanded)
+                {"major": 1, "minor": 2, "patch_range": range(0, 15)}, # 1.2.0 - 1.2.14 (expanded)
                 {"major": 1, "minor": 1, "patch_range": range(0, 10)}, # 1.1.0 - 1.1.9
                 {"major": 1, "minor": 0, "patch_range": range(0, 10)}, # 1.0.0 - 1.0.9
             ]
@@ -1198,10 +1285,13 @@ class CursorInstaller:
                 if len(discovered_versions) >= 12:
                     break
         else:
-            # We have the latest from API, just probe a few known stable versions for completeness
-            self.print_info("API provided latest version, probing for a few more stable versions...")
+            # We have the latest from API, probe for newer versions and recent stable ones
+            self.print_info("API provided latest version, probing for newer and stable versions...")
             recent_versions = [
-                "1.3.6", "1.3.5", "1.3.4", "1.3.3", "1.3.2", "1.3.1", "1.3.0",
+                # Test potential newer versions first
+                "1.4.5", "1.4.4", "1.4.3", "1.4.2", "1.4.1", "1.4.0",
+                "1.3.15", "1.3.14", "1.3.13", "1.3.12", "1.3.11", "1.3.10", "1.3.9",
+                "1.3.8", "1.3.7", "1.3.6", "1.3.5", "1.3.4", "1.3.3", "1.3.2", "1.3.1", "1.3.0",
                 "1.2.9", "1.2.8", "1.2.7"
             ]
             for version in recent_versions:
@@ -2213,6 +2303,11 @@ show_post_install_info() {
     echo
     print_info "Report issues at: https://github.com/jwillians/cursor-update"
     echo
+    echo -e "${BOLD}${YELLOW}⚠️  IMPORTANT DISCLAIMER:${NC}"
+    echo -e "${YELLOW}   This is an UNOFFICIAL installer created by a fan community member.${NC}"
+    echo -e "${YELLOW}   NOT affiliated with, endorsed by, or supported by Anysphere.${NC}"
+    echo -e "${YELLOW}   For official support, visit https://www.cursor.com${NC}"
+    echo
     print_info "If you encounter namespace or sandbox errors when running the AppImage, try:"
     echo "  sysctl -w user.unprivileged_userns_clone=1"
     echo "  or extract the AppImage with: /opt/cursor.appimage --appimage-extract"
@@ -2326,6 +2421,10 @@ main() {
     echo
     
     print_success "All done! Enjoy using Cursor IDE! 🎉"
+    echo
+    echo -e "${BOLD}${YELLOW}📝 Remember: This is an UNOFFICIAL community tool${NC}"
+    echo -e "${YELLOW}   For official support, visit https://www.cursor.com${NC}"
+    echo -e "${YELLOW}   Licensed under MIT - see LICENSE file for details${NC}"
 }
 
 # Execute main function

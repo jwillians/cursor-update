@@ -1,6 +1,11 @@
-# 🎯 Cursor Update v1.0
+# 🎯 Cursor Update v1.1.0
 
 > **Professional Ubuntu Installer & Version Manager for Cursor IDE**
+
+⚠️ **DISCLAIMER: This is an UNOFFICIAL installer created by a fan community member.**  
+**NOT affiliated with, endorsed by, or officially supported by Anysphere (the creators of Cursor IDE).**  
+**Use at your own risk. Cursor IDE is a trademark of Anysphere.**  
+**For official support, visit [cursor.com](https://www.cursor.com)**
 
 A comprehensive, standalone script that downloads, installs, and manages Cursor IDE versions on Ubuntu/Debian systems with advanced features like version management, desktop integration, and AI-powered development environment setup.
 
@@ -273,6 +278,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Issues**: [GitHub Issues](https://github.com/jwillians/cursor-update/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/jwillians/cursor-update/discussions)
 - **Documentation**: This README and script comments
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### Important Legal Notice
+
+**This is an UNOFFICIAL installer created by a fan community member.**
+- **NOT affiliated with, endorsed by, or officially supported by Anysphere**
+- **Cursor IDE is a trademark of Anysphere**
+- **This installer simply automates the download and installation process using publicly available releases**
+- **For official support, visit [cursor.com](https://www.cursor.com)**
 
 ---
 
