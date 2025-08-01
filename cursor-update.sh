@@ -214,6 +214,8 @@ install_script_to_system() {
     
     if ask_permission "Install cursor-update command system-wide?"; then
         local current_script="$0"
+        debug_log "Current script path: '$current_script'"
+        debug_log "File exists check: $(test -f "$current_script" && echo "YES" || echo "NO")"
         
         # If we're running from a temp location (curl pipe), download the script properly
         if [[ "$current_script" == "/dev/fd/"* ]] || [[ "$current_script" == "/proc/self/fd/"* ]] || [[ "$current_script" == "bash" ]] || [[ ! -f "$current_script" ]]; then
@@ -221,9 +223,15 @@ install_script_to_system() {
             local temp_script="/tmp/cursor-update.sh"
             
             if command_exists curl; then
+                debug_log "Downloading with curl: '$SCRIPT_URL' -> '$temp_script'"
                 curl -fsSL "$SCRIPT_URL" -o "$temp_script"
+                debug_log "Curl exit code: $?"
+                debug_log "Downloaded file exists: $(test -f "$temp_script" && echo "YES" || echo "NO")"
             elif command_exists wget; then
+                debug_log "Downloading with wget: '$SCRIPT_URL' -> '$temp_script'"
                 wget -qO "$temp_script" "$SCRIPT_URL"
+                debug_log "Wget exit code: $?"
+                debug_log "Downloaded file exists: $(test -f "$temp_script" && echo "YES" || echo "NO")"
             else
                 print_error "Cannot download script for system installation"
                 return 1
