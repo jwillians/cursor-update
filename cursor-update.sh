@@ -214,8 +214,6 @@ install_script_to_system() {
     
     if ask_permission "Install cursor-update command system-wide?"; then
         local current_script="$0"
-        debug_log "Current script path: '$current_script'"
-        debug_log "File exists check: $(test -f "$current_script" && echo "YES" || echo "NO")"
         
         # If we're running from a temp location (curl pipe), download the script properly
         if [[ "$current_script" == "/dev/fd/"* ]] || [[ "$current_script" == "/proc/self/fd/"* ]] || [[ "$current_script" == "bash" ]] || [[ ! -f "$current_script" ]]; then
@@ -223,15 +221,9 @@ install_script_to_system() {
             local temp_script="/tmp/cursor-update.sh"
             
             if command_exists curl; then
-                debug_log "Downloading with curl: '$SCRIPT_URL' -> '$temp_script'"
                 curl -fsSL "$SCRIPT_URL" -o "$temp_script"
-                debug_log "Curl exit code: $?"
-                debug_log "Downloaded file exists: $(test -f "$temp_script" && echo "YES" || echo "NO")"
             elif command_exists wget; then
-                debug_log "Downloading with wget: '$SCRIPT_URL' -> '$temp_script'"
                 wget -qO "$temp_script" "$SCRIPT_URL"
-                debug_log "Wget exit code: $?"
-                debug_log "Downloaded file exists: $(test -f "$temp_script" && echo "YES" || echo "NO")"
             else
                 print_error "Cannot download script for system installation"
                 return 1
@@ -785,13 +777,12 @@ check_existing_installations() {
     
     # Check for running Cursor processes (more specific detection)
     # Look for actual Cursor IDE processes, not just any process with "cursor" in name
-    # Exclude debug version ./Cursor-1.3.6-x86_64.AppImage --no-sandbox
-    local cursor_processes=$(ps aux | grep -E '(/cursor\.appimage|/Cursor.*\.AppImage|cursor --no-sandbox)' | grep -v grep | grep -v "install-cursor.sh" | grep -v "Cursor-1.3.6-x86_64.AppImage --no-sandbox")
+    # Check for running Cursor processes
+    local cursor_processes=$(ps aux | grep -E '(/cursor\.appimage|/Cursor.*\.AppImage|cursor --no-sandbox)' | grep -v grep | grep -v "install-cursor.sh")
     local cursor_check=$(echo "$cursor_processes" | wc -l)
     if [[ "$cursor_check" -gt 0 && -n "$(echo "$cursor_processes" | tr -d '[:space:]')" ]]; then
         local cursor_pids=$(echo "$cursor_processes" | awk '{print $2}' | tr '\n' ' ')
         running_processes+=("Running Cursor IDE processes found (PIDs: $cursor_pids)")
-        print_info "🐛 DEBUG: Excluding debug version ./Cursor-1.3.6-x86_64.AppImage --no-sandbox from process detection"
     fi
     
     # Check common installation locations
@@ -890,8 +881,7 @@ check_existing_installations() {
                 # Found but this one has "Currently running" status, replace
                 unique_installations[$found_index]="$installation"
             fi
-        elif [[ "$installation" == *"Cursor-1.3.6-x86_64.AppImage"* ]]; then
-            print_info "🐛 DEBUG: Protecting debug version from removal: $installation"
+
         fi
     done
     
