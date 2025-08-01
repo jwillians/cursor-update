@@ -568,6 +568,32 @@ check_dependencies() {
     print_success "All Python dependencies ready"
 }
 
+# Check if a desktop file follows our standard pattern
+is_our_desktop_file() {
+    local desktop_file="$1"
+    
+    if [[ ! -f "$desktop_file" ]]; then
+        return 1
+    fi
+    
+    # Check for our signature patterns
+    local our_patterns=(
+        "Comment=The AI-first code editor. Edit code with AI superpowers."
+        "StartupWMClass=cursor"
+        "Keywords=cursor;code;editor;ide;development;programming;ai;copilot"
+        "--no-sandbox %F"
+    )
+    
+    # All patterns must be present for it to be our file
+    for pattern in "${our_patterns[@]}"; do
+        if ! grep -q -F "$pattern" "$desktop_file" 2>/dev/null; then
+            return 1
+        fi
+    done
+    
+    return 0
+}
+
 # Clean up old desktop entries function
 cleanup_old_desktop_entries() {
     print_info "Cleaning up old desktop entries and shell commands..."
@@ -591,19 +617,40 @@ cleanup_old_desktop_entries() {
         done < <(find "$HOME/.local/share/applications" -maxdepth 1 -iname "*cursor*.desktop" -type f -print0 2>/dev/null)
     fi
     
-    # Remove found desktop files
+    # Analyze found desktop files (remove only non-standard ones)
     if [[ ${#cursor_desktops[@]} -gt 0 ]]; then
-        print_info "Found ${#cursor_desktops[@]} old desktop entries to remove:"
+        print_info "Found ${#cursor_desktops[@]} desktop entries to analyze:"
+        local removed_count=0
+        local updated_count=0
         for desktop_file in "${cursor_desktops[@]}"; do
-            print_info "  • $desktop_file"
-            if [[ "$desktop_file" == /usr/share/applications/* ]]; then
-                sudo rm -f "$desktop_file" 2>/dev/null || print_warning "Failed to remove $desktop_file"
-            else
-                rm -f "$desktop_file" 2>/dev/null || print_warning "Failed to remove $desktop_file"
+            if [[ -f "$desktop_file" ]]; then
+                # Check if desktop file follows our standard pattern
+                if is_our_desktop_file "$desktop_file"; then
+                    print_info "  • Found our standard file: $desktop_file - will update it"
+                    ((updated_count++))
+                    # Don't remove it, will be updated when we create the new one
+                else
+                    print_info "  • Removing non-standard entry: $desktop_file"
+                    if [[ "$desktop_file" == /usr/share/applications/* ]]; then
+                        sudo rm -f "$desktop_file" 2>/dev/null || print_warning "Failed to remove $desktop_file"
+                    else
+                        rm -f "$desktop_file" 2>/dev/null || print_warning "Failed to remove $desktop_file"
+                    fi
+                    ((removed_count++))
+                fi
             fi
         done
+        if [[ $removed_count -eq 0 && $updated_count -eq 0 ]]; then
+            print_info "No desktop entries processed"
+        elif [[ $removed_count -eq 0 ]]; then
+            print_info "Found $updated_count standard entries to update"
+        elif [[ $updated_count -eq 0 ]]; then
+            print_info "Removed $removed_count non-standard entries"
+        else
+            print_info "Removed $removed_count non-standard entries, will update $updated_count standard entries"
+        fi
     else
-        print_info "No old desktop entries found"
+        print_info "No desktop entries found"
     fi
     
     # Remove old shell commands
@@ -615,13 +662,29 @@ cleanup_old_desktop_entries() {
         fi
     done
     
-    # Remove old icons
+    # Remove old icons (but protect ones referenced by our standard desktop files)
     local old_icons=("/usr/share/pixmaps/cursor.png" "/usr/share/icons/hicolor/*/apps/cursor.png")
+    local icon_in_use=false
+    
+    # Check if any of our standard desktop files reference cursor icons
+    for desktop_file in "${cursor_desktops[@]}"; do
+        if [[ -f "$desktop_file" ]] && is_our_desktop_file "$desktop_file"; then
+            if grep -q "Icon=/usr/share/pixmaps/cursor.png\|Icon=cursor" "$desktop_file" 2>/dev/null; then
+                icon_in_use=true
+                break
+            fi
+        fi
+    done
+    
     for icon_pattern in "${old_icons[@]}"; do
         for icon_file in $icon_pattern; do
             if [[ -f "$icon_file" ]]; then
-                print_info "Removing old icon: $icon_file"
-                sudo rm -f "$icon_file" 2>/dev/null || print_warning "Failed to remove $icon_file"
+                if [[ "$icon_in_use" == true ]]; then
+                    print_info "Preserving icon (in use by standard desktop file): $icon_file"
+                else
+                    print_info "Removing unused icon: $icon_file"
+                    sudo rm -f "$icon_file" 2>/dev/null || print_warning "Failed to remove $icon_file"
+                fi
             fi
         done
     done
@@ -1694,43 +1757,98 @@ class CursorInstaller:
             self.print_warning(f"Fallback icon download failed: {e}")
             return False
 
+    def _is_our_desktop_file(self, desktop_file_path):
+        """Check if a desktop file follows our standard pattern."""
+        try:
+            with open(desktop_file_path, 'r') as f:
+                content = f.read()
+            
+            # Check for our signature patterns
+            our_patterns = [
+                "Comment=The AI-first code editor. Edit code with AI superpowers.",
+                "StartupWMClass=cursor",
+                "Keywords=cursor;code;editor;ide;development;programming;ai;copilot",
+                "--no-sandbox %F"
+            ]
+            
+            # All patterns must be present for it to be our file
+            for pattern in our_patterns:
+                if pattern not in content:
+                    return False
+                    
+            return True
+        except Exception:
+            return False
+
     def _create_desktop_integration(self):
         """Create enhanced desktop shortcut with proper icon extraction."""
         self.print_info("Creating desktop integration...")
         
-        # First, remove any existing desktop entries to avoid conflicts
-        self.print_info("Checking for and removing existing desktop entries...")
+        # Check for conflicting desktop entries (but be selective)
+        self.print_info("Checking for conflicting desktop entries...")
         import subprocess
         import glob
+        import os
+        import time
         
-        # Remove existing cursor desktop files
+        # Remove existing cursor desktop files (but preserve recent ones)
         existing_desktop_files = []
         for pattern in ["/usr/share/applications/*cursor*.desktop", "/usr/share/applications/*Cursor*.desktop"]:
             existing_desktop_files.extend(glob.glob(pattern))
         
         if existing_desktop_files:
-            self.print_info(f"Found {len(existing_desktop_files)} existing desktop entries to remove")
+            self.print_info(f"Found {len(existing_desktop_files)} existing desktop entries to analyze")
+            removed_count = 0
+            updated_count = 0
             for desktop_file in existing_desktop_files:
                 try:
-                    subprocess.run(['sudo', 'rm', '-f', desktop_file], check=True, capture_output=True)
-                    self.print_info(f"  • Removed: {desktop_file}")
+                    # Check if desktop file follows our standard pattern
+                    if self._is_our_desktop_file(desktop_file):
+                        self.print_info(f"  • Found our standard file: {desktop_file} - will update it")
+                        updated_count += 1
+                        # Don't remove it, will be updated when we create the new one
+                    else:
+                        subprocess.run(['sudo', 'rm', '-f', desktop_file], check=True, capture_output=True)
+                        self.print_info(f"  • Removed non-standard entry: {desktop_file}")
+                        removed_count += 1
                 except Exception as e:
-                    self.print_warning(f"Failed to remove {desktop_file}: {e}")
+                    self.print_warning(f"Failed to process {desktop_file}: {e}")
+            if removed_count == 0 and updated_count == 0:
+                self.print_info("No desktop entries processed")
+            elif removed_count == 0:
+                self.print_info(f"Found {updated_count} standard entries to update")
+            elif updated_count == 0:
+                self.print_info(f"Removed {removed_count} non-standard entries")
         else:
             self.print_info("No existing desktop entries found")
         
-        # Also check user-specific applications directory
+        # Also check user-specific applications directory (pattern-based analysis)
         user_apps_dir = Path.home() / ".local/share/applications"
         if user_apps_dir.exists():
             user_desktop_files = list(user_apps_dir.glob("*cursor*.desktop")) + list(user_apps_dir.glob("*Cursor*.desktop"))
             if user_desktop_files:
-                self.print_info(f"Found {len(user_desktop_files)} user desktop entries to remove")
+                self.print_info(f"Found {len(user_desktop_files)} user desktop entries to analyze")
+                removed_count = 0
+                updated_count = 0
                 for desktop_file in user_desktop_files:
                     try:
-                        desktop_file.unlink()
-                        self.print_info(f"  • Removed: {desktop_file}")
+                        # Check if desktop file follows our standard pattern
+                        if self._is_our_desktop_file(str(desktop_file)):
+                            self.print_info(f"  • Found our standard user file: {desktop_file} - will update it")
+                            updated_count += 1
+                            # Don't remove it, will be updated when we create the new one
+                        else:
+                            desktop_file.unlink()
+                            self.print_info(f"  • Removed non-standard user entry: {desktop_file}")
+                            removed_count += 1
                     except Exception as e:
-                        self.print_warning(f"Failed to remove {desktop_file}: {e}")
+                        self.print_warning(f"Failed to process {desktop_file}: {e}")
+                if removed_count == 0 and updated_count == 0:
+                    self.print_info("No user desktop entries processed")
+                elif removed_count == 0:
+                    self.print_info(f"Found {updated_count} standard user entries to update")
+                elif updated_count == 0:
+                    self.print_info(f"Removed {removed_count} non-standard user entries")
         
         # Force desktop database update to clear old entries
         try:
@@ -2131,13 +2249,18 @@ main() {
     # Check for Cursor updates if already installed
     current_cursor_version=$(get_current_cursor_version)
     if [[ -n "$current_cursor_version" ]]; then
-        if ! check_cursor_update "$current_cursor_version" 2>/dev/null; then
-            debug_log "Cursor update check completed or skipped"
+        if check_cursor_update "$current_cursor_version" 2>/dev/null; then
+            # Update was successful, exit gracefully
+            debug_log "Cursor update completed successfully - exiting"
+            print_success "All done! Enjoy using Cursor IDE! 🎉"
+            exit 0
+        else
+            debug_log "Cursor update check completed or skipped - continuing to menu"
         fi
         echo
     fi
     
-    # Welcome message
+    # Welcome message - only shown if no update was done
     print_info "This installer will download and install Cursor IDE on your Ubuntu system."
     print_info "It includes advanced version management and system integration."
     echo
@@ -2184,7 +2307,14 @@ main() {
     fi
     
     print_info "🧹 Final cleanup: Ensuring old desktop entries are removed..."
-    cleanup_old_desktop_entries
+    # Skip cleanup during updates to avoid removing fresh desktop entries
+    current_cursor_version=$(get_current_cursor_version)
+    if [[ -z "$current_cursor_version" ]]; then
+        # Only clean up if this is a fresh installation, not an update
+        cleanup_old_desktop_entries
+    else
+        print_info "Skipping desktop cleanup during update to preserve fresh entries"
+    fi
     
     print_info "🚀 Step 5/6: Running installation..."
     run_installation
