@@ -292,6 +292,77 @@ check_dependencies() {
     print_success "All Python dependencies ready"
 }
 
+# Clean up old desktop entries function
+cleanup_old_desktop_entries() {
+    print_info "Cleaning up old desktop entries and shell commands..."
+    
+    # Find and remove all cursor-related desktop files
+    local cursor_desktops=()
+    if [[ -d "/usr/share/applications" ]]; then
+        while IFS= read -r -d '' desktop_file; do
+            if [[ -n "$desktop_file" ]]; then
+                cursor_desktops+=("$desktop_file")
+            fi
+        done < <(find /usr/share/applications -maxdepth 1 -iname "*cursor*.desktop" -type f -print0 2>/dev/null)
+    fi
+    
+    # Also check user-specific applications directory
+    if [[ -d "$HOME/.local/share/applications" ]]; then
+        while IFS= read -r -d '' desktop_file; do
+            if [[ -n "$desktop_file" ]]; then
+                cursor_desktops+=("$desktop_file")
+            fi
+        done < <(find "$HOME/.local/share/applications" -maxdepth 1 -iname "*cursor*.desktop" -type f -print0 2>/dev/null)
+    fi
+    
+    # Remove found desktop files
+    if [[ ${#cursor_desktops[@]} -gt 0 ]]; then
+        print_info "Found ${#cursor_desktops[@]} old desktop entries to remove:"
+        for desktop_file in "${cursor_desktops[@]}"; do
+            print_info "  • $desktop_file"
+            if [[ "$desktop_file" == /usr/share/applications/* ]]; then
+                sudo rm -f "$desktop_file" 2>/dev/null || print_warning "Failed to remove $desktop_file"
+            else
+                rm -f "$desktop_file" 2>/dev/null || print_warning "Failed to remove $desktop_file"
+            fi
+        done
+    else
+        print_info "No old desktop entries found"
+    fi
+    
+    # Remove old shell commands
+    local shell_commands=("/usr/local/bin/cursor" "/usr/bin/cursor")
+    for cmd in "${shell_commands[@]}"; do
+        if [[ -f "$cmd" ]]; then
+            print_info "Removing old shell command: $cmd"
+            sudo rm -f "$cmd" 2>/dev/null || print_warning "Failed to remove $cmd"
+        fi
+    done
+    
+    # Remove old icons
+    local old_icons=("/usr/share/pixmaps/cursor.png" "/usr/share/icons/hicolor/*/apps/cursor.png")
+    for icon_pattern in "${old_icons[@]}"; do
+        for icon_file in $icon_pattern; do
+            if [[ -f "$icon_file" ]]; then
+                print_info "Removing old icon: $icon_file"
+                sudo rm -f "$icon_file" 2>/dev/null || print_warning "Failed to remove $icon_file"
+            fi
+        done
+    done
+    
+    # Update desktop database to ensure changes take effect
+    print_info "Updating desktop database..."
+    sudo update-desktop-database /usr/share/applications/ 2>/dev/null || true
+    if [[ -d "$HOME/.local/share/applications" ]]; then
+        update-desktop-database "$HOME/.local/share/applications/" 2>/dev/null || true
+    fi
+    
+    # Force desktop environment refresh
+    xdg-desktop-menu forceupdate 2>/dev/null || true
+    
+    print_success "Old desktop entries cleanup completed"
+}
+
 # Check for existing Cursor installations
 check_existing_installations() {
     print_step "Checking for existing Cursor installations..."
@@ -512,14 +583,16 @@ check_existing_installations() {
             
             # Clean up desktop entries and shell commands
             print_info "Cleaning up desktop entries and shell commands..."
-            sudo rm -f /usr/share/applications/*cursor*.desktop 2>/dev/null || true
-            sudo rm -f /usr/local/bin/cursor 2>/dev/null || true
-            sudo rm -f /usr/bin/cursor 2>/dev/null || true
+            cleanup_old_desktop_entries
             
             print_success "Existing installations cleaned up"
         else
             print_warning "Existing installations will remain"
             print_info "This may cause conflicts or confusion about which version is active"
+            echo
+            # Even if keeping installations, we should clean up old desktop entries to avoid conflicts
+            print_info "Cleaning up old desktop entries to avoid conflicts with new installation..."
+            cleanup_old_desktop_entries
         fi
         echo
     else
@@ -1349,6 +1422,50 @@ class CursorInstaller:
         """Create enhanced desktop shortcut with proper icon extraction."""
         self.print_info("Creating desktop integration...")
         
+        # First, remove any existing desktop entries to avoid conflicts
+        self.print_info("Checking for and removing existing desktop entries...")
+        import subprocess
+        import glob
+        
+        # Remove existing cursor desktop files
+        existing_desktop_files = []
+        for pattern in ["/usr/share/applications/*cursor*.desktop", "/usr/share/applications/*Cursor*.desktop"]:
+            existing_desktop_files.extend(glob.glob(pattern))
+        
+        if existing_desktop_files:
+            self.print_info(f"Found {len(existing_desktop_files)} existing desktop entries to remove")
+            for desktop_file in existing_desktop_files:
+                try:
+                    subprocess.run(['sudo', 'rm', '-f', desktop_file], check=True, capture_output=True)
+                    self.print_info(f"  • Removed: {desktop_file}")
+                except Exception as e:
+                    self.print_warning(f"Failed to remove {desktop_file}: {e}")
+        else:
+            self.print_info("No existing desktop entries found")
+        
+        # Also check user-specific applications directory
+        user_apps_dir = Path.home() / ".local/share/applications"
+        if user_apps_dir.exists():
+            user_desktop_files = list(user_apps_dir.glob("*cursor*.desktop")) + list(user_apps_dir.glob("*Cursor*.desktop"))
+            if user_desktop_files:
+                self.print_info(f"Found {len(user_desktop_files)} user desktop entries to remove")
+                for desktop_file in user_desktop_files:
+                    try:
+                        desktop_file.unlink()
+                        self.print_info(f"  • Removed: {desktop_file}")
+                    except Exception as e:
+                        self.print_warning(f"Failed to remove {desktop_file}: {e}")
+        
+        # Force desktop database update to clear old entries
+        try:
+            subprocess.run(['sudo', 'update-desktop-database', '/usr/share/applications/'], 
+                         capture_output=True, check=False)
+            if user_apps_dir.exists():
+                subprocess.run(['update-desktop-database', str(user_apps_dir)], 
+                             capture_output=True, check=False)
+        except Exception:
+            pass
+        
         # First try to extract icon from AppImage
         icon_extracted = False
         if self.SYSTEM_INSTALL_PATH.exists():
@@ -1767,6 +1884,9 @@ main() {
         print_warning "There were some issues checking AppImage compatibility, but continuing..."
         debug_log "check_libfuse2 failed but continuing"
     fi
+    
+    print_info "🧹 Final cleanup: Ensuring old desktop entries are removed..."
+    cleanup_old_desktop_entries
     
     print_info "🚀 Step 5/5: Running installation..."
     run_installation
