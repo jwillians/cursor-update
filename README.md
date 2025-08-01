@@ -1,306 +1,214 @@
-# Cursor IDE Installer for Ubuntu
+# 🎯 Cursor IDE Installer
 
-🚀 **One-command installation!**
+> **Professional Ubuntu Installer & Version Manager for Cursor IDE**
 
-Professional standalone installer for Cursor IDE on Ubuntu systems with automatic dependency management, version control, and complete system integration.
-
-## 📋 Correções Implementadas
-
-**Status do projeto:** Todas as correções implementadas! 🎉
-
-### Correções realizadas:
-
-- [x] **1. Verificação de versões antigas**: Se não existir versões antigas do Cursor instaladas, o script não deve sugerir a desinstalação de versões antigas (atualmente sempre sugere) ✅
-
-- [x] **2. Solicitação antecipada do sudo**: O script deve solicitar privilégios sudo no começo da execução, pois é necessário para remover instalações existentes e instalar no sistema ✅
-
-- [x] **3. Atualização da lista de versões**: O script precisa buscar e exibir as versões mais atuais disponíveis (atualmente mostra 1.3.4 como mais recente, mas já existe 1.3.6+) ✅
-
-- [x] **4. Integração completa com desktop**: 
-  - [x] Criar atalho funcional na dock/menu do Ubuntu ✅
-  - [x] Extrair e usar o ícone do próprio AppImage ao invés de baixar da web ✅
-  - [x] Garantir que o aplicativo apareça corretamente no menu de aplicativos ✅
-  - [x] Configurar associações de arquivo adequadas ✅
-
-### Resumo das melhorias implementadas:
-- 🟢 **Todas as 4 correções concluídas** - Implementadas e testadas
-- 🎯 **Detecção inteligente** - Não sugere remoção se não há versões antigas
-- 🔐 **Sudo antecipado** - Solicita privilégios no início do processo  
-- 🔄 **Descoberta automática** - Busca versões mais recentes automaticamente
-- 🖥️ **Integração completa** - Ícone do AppImage, atalhos, associações de arquivo
-
-### Bugs corrigidos na v2.1:
-- 🔧 **Sudo duplo** - Corrigido para não solicitar sudo duas vezes
-- 🔍 **Probing de versões** - Melhorado para encontrar versões mais recentes (testa múltiplos padrões de URL)
-- 🖥️ **Integração desktop robusta** - Debugging e validação melhorados para garantir criação de atalhos
-
-### Hotfixes v2.1.1:
-- 💾 **Cache inteligente** - Força renovação automática se cache contém apenas versões antigas (< 1.3.5)
-- 🔄 **Opção force refresh** - Nova opção no menu para forçar busca de versões mais recentes
-- 🖥️ **Desktop debugging** - Verificação detalhada de criação e persistência de atalhos
-- 📊 **Probing verboso** - Debugging detalhado do processo de descoberta de versões
-
-### Major Update v2.2.0:
-- 🚀 **Descoberta 100% dinâmica** - Sempre consulta as últimas 10 versões disponíveis
-- ❌ **Fallback removido** - Elimina completamente versões hardcoded desatualizadas
-- 🔮 **Preparado para o futuro** - Suporte automático para versões 1.4.x, 1.5.x, 2.x, etc.
-- ⚡ **Performance otimizada** - Timeouts reduzidos, cache de 6 horas, descoberta mais rápida
-- 🎯 **Top 10 garantido** - Sempre retorna as 10 versões mais recentes encontradas
-
-### Bugfix v2.2.1:
-- 🛠️ **Descoberta dinâmica simplificada** - Corrige problemas de descoberta e download de versões
-- 🐛 **Proteção de debug** - Exclui `/home/jwillians/Downloads/Cursor-1.3.6-x86_64.AppImage` da remoção
-- 🔒 **Processo debug protegido** - Não fecha processos da versão de debug durante limpeza
-- 🆘 **Fallback de emergência** - Se descoberta falhar, oferece versões 1.3.6, 1.3.5, 1.3.4
-- 🔧 **URLs corrigidas** - Corrige URLs de ícones e melhora robustez
-
----
-
-## 🚀 Quick Installation
-
-### One-Command Install (Recommended)
-```bash
-# Install with single command
-curl -fsSL https://gist.githubusercontent.com/jwillians/GIST_ID/raw/install-cursor.sh | bash
-```
-
-### Alternative Methods
-```bash
-# Download and inspect first (more secure)
-wget https://gist.githubusercontent.com/jwillians/GIST_ID/raw/install-cursor.sh
-chmod +x install-cursor.sh
-./install-cursor.sh
-
-# Or clone this repository
-git clone https://github.com/jwillians/cursor-update.git
-cd cursor-update
-chmod +x install-cursor.sh
-./install-cursor.sh
-```
+A comprehensive, standalone script that downloads, installs, and manages Cursor IDE versions on Ubuntu/Debian systems with advanced features like version management, desktop integration, and AI-powered development environment setup.
 
 ## ✨ Features
 
-- 🎯 **One-Command Install**: Simple installation with `curl | bash`
-- 🚀 **Dynamic Version Discovery**: Always finds the latest 10 versions automatically
-- 🔮 **Future-Proof**: Supports versions 1.4.x, 1.5.x, 2.x and beyond
-- 🔍 **Smart Dependencies**: Auto-detects and installs required packages
-- 🛡️ **Interactive Permissions**: Asks for confirmation at each step
-- 🎨 **Beautiful Interface**: Colorized output with progress indicators
-- 🏗️ **System Detection**: Automatically detects Ubuntu/Debian and architecture
-- 📦 **Complete Integration**: Desktop shortcuts, shell commands, everything
-- 🔄 **Version Management**: Download and switch between versions
-- 🧹 **Self-Contained**: No external files needed, everything embedded
+### 🚀 **Smart Installation**
+- **Latest Version Detection**: Automatically fetches the most recent Cursor IDE version using official APIs
+- **Multiple Architecture Support**: x64 and ARM64 compatible
+- **Dependency Management**: Automatically installs required system dependencies
+- **AppImage Integration**: Full AppImage support with libfuse2 handling
 
-## 📋 What It Does
+### 🔧 **Advanced Version Management**
+- **Download Multiple Versions**: Keep different Cursor versions locally
+- **Switch Between Versions**: Easily change active Cursor version
+- **Version Caching**: Smart caching system for faster operations
+- **Backup System**: Automatic backup of previous installations
 
-### Automatic System Detection
-- ✅ Detects Ubuntu/Debian distribution and version
-- ✅ Identifies architecture (x64/ARM64)
-- ✅ Checks for Ubuntu 24.04+ libfuse2 compatibility
+### 🖥️ **Desktop Integration**
+- **Application Menu Entry**: Creates proper desktop shortcuts
+- **Icon Extraction**: Automatically extracts and installs Cursor icons
+- **MIME Type Support**: Associates code files with Cursor
+- **Shell Integration**: Adds `cursor` command to terminal
 
-### Smart Dependency Management
-- ✅ Auto-installs missing system packages (`curl`, `wget`, `sudo`)
-- ✅ Checks and installs Python 3.8+ if needed
-- ✅ Installs required Python packages automatically
-- ✅ Handles `libfuse2` for AppImage support
+### 🛡️ **Safety Features**
+- **Process Protection**: Protects running Cursor instances during installation
+- **Conflict Detection**: Identifies and manages existing installations
+- **Rollback Support**: Backup and restore capabilities
+- **Debug Mode**: Comprehensive logging for troubleshooting
 
-### Interactive Installation Process
-1. **System Check**: Verifies compatibility and dependencies
-2. **Permission Requests**: Asks before installing anything
-3. **Version Selection**: Choose latest, browse versions, or pick specific version
-4. **Download & Install**: Progress tracking with retry logic
-5. **System Integration**: Desktop shortcuts, shell commands, menu integration
+## 📋 Requirements
 
-### Dynamic Version Discovery (v2.2.0+)
-- 🚀 **Real-time Discovery**: Tests Cursor's servers for the latest versions
-- 🔢 **Top 10 Versions**: Always shows the 10 most recent available versions  
-- 🔮 **Future-Ready**: Automatically detects 1.4.x, 1.5.x, 2.x series when released
-- ⚡ **Smart Caching**: 6-hour cache with intelligent refresh triggers
-- 🌐 **Multiple URL Patterns**: Tests 3 different download URL structures
-- ❌ **No Hardcoded Versions**: Completely eliminates outdated fallback lists
+### System Requirements
+- **OS**: Ubuntu 18.04+ or Debian-based distributions
+- **Architecture**: x86_64 (x64) or ARM64
+- **RAM**: 4GB minimum (8GB+ recommended)
+- **Disk Space**: ~2GB for installation and cache
+- **Network**: Internet connection required
 
-### Complete Integration
-- 🖥️ **Desktop Integration**: Application menu entry with extracted AppImage icon
-- 💻 **Shell Command**: `cursor` command available system-wide
-- 📂 **File Association**: Opens code files and directories
-- 🔧 **Version Management**: Switch between downloaded versions
-- 💾 **Auto Backup**: Backs up existing installations
+### Dependencies (Auto-installed)
+- `curl` - For downloads
+- `wget` - Backup downloader
+- `python3` (3.8+) - Core installer logic
+- `libfuse2` - AppImage support
+- Python packages: `requests`, `beautifulsoup4`, `lxml`, `packaging`
 
-## Requirements
+## 🚀 Quick Start
 
-- Ubuntu 18.04+ (other Debian-based distributions may work)
-- Architecture: x86_64 (x64) or ARM64
-- Internet connection for downloads
-- `sudo` access for system-wide installation
-
-*Note: Python 3.8+ and other dependencies are auto-installed if missing*
-
-## Usage
-
-### Interactive Installation
+### One-Line Installation
 ```bash
+curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/main/install-cursor.sh | bash
+```
+
+### Manual Installation
+```bash
+# Download the script
+wget https://raw.githubusercontent.com/jwillians/cursor-update/main/install-cursor.sh
+
+# Make it executable
+chmod +x install-cursor.sh
+
 # Run the installer
 ./install-cursor.sh
-
-# Follow the interactive prompts:
-# 1) Install latest version (recommended)  ← Choose this
-# 2) List available versions
-# 3) Install specific version
-# 4) Exit
 ```
 
-### Example Installation Flow
-```
-🎯 Cursor IDE Installer v2.0.0
-   Professional Ubuntu Installer & Version Manager
-================================================================
+## 📖 Usage
 
-ℹ This installer will download and install Cursor IDE on your Ubuntu system.
-ℹ It includes advanced version management and system integration.
-
-❓ Continue with installation? [Y/n] y
-
-▶ Detecting system information...
-ℹ System: ubuntu 22.04
-ℹ Architecture: x86_64 (x64)
-
-▶ Checking system dependencies...
-✓ All system dependencies found
-✓ Python 3.10 found
-✓ All Python dependencies ready
-
-▶ Starting Cursor IDE installation...
-ℹ What would you like to do?
-  1) Install latest version (recommended)
-  2) List available versions  
-  3) Install specific version
-  4) Exit
-
-Enter your choice [1-4]: 1
-
-▶ Installing latest Cursor IDE version...
-ℹ Downloading Cursor v1.3.4...
-ℹ Progress: 100.0% (142.5 MB downloaded)
-✓ Downloaded Cursor v1.3.4
-✓ Switched to Cursor v1.3.4
-✓ Cursor v1.3.4 installed successfully!
-
-ℹ You can now launch Cursor from:
-  • Applications menu
-  • Terminal: cursor
-  • Direct: /opt/cursor.appimage
+### Interactive Mode
+Simply run the script and follow the interactive prompts:
+```bash
+./install-cursor.sh
 ```
 
-## File Locations After Installation
+**Available options:**
+1. **Install latest version** (recommended)
+2. **List available versions**
+3. **List available versions** (force refresh)
+4. **Install specific version**
+5. **Remove specific version**
+6. **Exit**
 
+### Direct Commands
+The script also supports direct version management:
+
+```bash
+# List available versions
+python3 <(curl -s https://raw.githubusercontent.com/jwillians/cursor-update/main/install-cursor.sh | grep -A 1000 "create_python_installer" | grep -B 1000 "echo.*temp_script") list
+
+# Install specific version
+./install-cursor.sh  # Choose option 4, then enter version
 ```
-System Files:
-├── /opt/cursor.appimage              # Main executable
-├── /usr/share/applications/cursor.desktop  # Desktop entry
-├── /usr/share/pixmaps/cursor.png     # Application icon
-└── /usr/local/bin/cursor             # Shell command
 
-User Files:
-├── ~/.local/share/cursor-installer/   # Version management
-│   ├── versions/                     # Downloaded versions
-│   ├── active -> versions/cursor-X.X.X.AppImage  # Active symlink
-│   └── versions_cache.json          # Version cache
-├── ~/.cursor/                        # User configurations
-└── ~/Applications/cursor/backups/    # Automatic backups
+## 🎮 After Installation
+
+### Launch Cursor IDE
+- **Applications Menu**: Search for "Cursor"
+- **Terminal**: Type `cursor`
+- **Direct**: Run `/opt/cursor.appimage`
+
+### Version Management
+```bash
+# Check active version
+cursor --version
+
+# Switch versions (re-run installer and choose option 4)
+./install-cursor.sh
 ```
 
-## Troubleshooting
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-**Q: Permission denied errors**
+#### AppImage Won't Run
 ```bash
-# Make sure you have sudo access
-sudo -v
-```
-
-**Q: Script fails to download**
-```bash
-# Check internet connection
-ping -c 3 github.com
-
-# Try manual download
-wget https://gist.githubusercontent.com/jwillians/GIST_ID/raw/install-cursor.sh
-```
-
-**Q: Python dependencies fail**
-```bash
-# Update package list
+# Install libfuse2
 sudo apt update
+sudo apt install libfuse2
 
-# Install Python manually if needed
-sudo apt install python3 python3-pip
+# Or run with extraction
+/opt/cursor.appimage --appimage-extract-and-run
 ```
 
-**Q: AppImage won't run on Ubuntu 24.04+**
+#### Permission Errors
 ```bash
-# The installer handles this automatically
-# It will either install libfuse2 or use extraction method
+# Fix AppImage permissions
+sudo chmod +x /opt/cursor.appimage
+
+# Fix executable permissions
+chmod +x install-cursor.sh
 ```
 
-### Manual Recovery
-If something goes wrong, you can manually clean up:
-
+#### Desktop Icon Missing
 ```bash
-# Remove system files
-sudo rm -f /opt/cursor.appimage
-sudo rm -f /usr/share/applications/cursor.desktop
-sudo rm -f /usr/share/pixmaps/cursor.png
-sudo rm -f /usr/local/bin/cursor
-
-# Remove user files (optional)
-rm -rf ~/.local/share/cursor-installer/
-rm -rf ~/Applications/cursor/backups/
-# Keep ~/.cursor/ if you want to preserve settings
+# Refresh desktop database
+sudo update-desktop-database /usr/share/applications/
+# Logout and login again
 ```
 
-## Ubuntu 24.04 Compatibility
+#### Network/Download Issues
+```bash
+# Run with debug mode
+DEBUG=1 ./install-cursor.sh
 
-Ubuntu 24.04+ may have AppImage issues due to libfuse2 deprecation. The installer automatically handles this by:
+# Clear cache and retry
+rm -rf ~/.local/share/cursor-installer/versions_cache.json
+```
 
-1. **Auto libfuse2 Installation**: Prompts to install when needed
-2. **AppImage Extraction**: Extract and run natively as fallback
-3. **Smart Detection**: Recognizes Ubuntu 24.04+ and adapts accordingly
+### Debug Mode
+Enable detailed logging:
+```bash
+DEBUG=1 ./install-cursor.sh
+```
 
-## Security Notes
+## 🔧 Configuration
 
-- **Open Source**: All code is visible and auditable
-- **Interactive**: Asks permission before installing anything
-- **No Auto-Execution**: Downloads files but asks before running them
-- **Backup First**: Creates backups before overwriting existing installations
-- **Standard Locations**: Uses conventional Linux file locations
+### Installation Paths
+- **Main Installation**: `/opt/cursor.appimage`
+- **Desktop Entry**: `/usr/share/applications/cursor.desktop`
+- **Icon**: `/usr/share/pixmaps/cursor.png`
+- **Shell Command**: `/usr/local/bin/cursor`
+- **Version Cache**: `~/.local/share/cursor-installer/`
 
-## Publishing to GitHub Gist
+### Customization
+The script automatically detects your system and configures appropriately. For custom installations, you can modify variables at the top of the script.
 
-To make your installer available via `curl`:
+## 🤝 Contributing
 
-1. **Create Gist**: Go to [gist.github.com](https://gist.github.com)
-2. **Upload Script**: Paste the content of `install-cursor.sh`
-3. **Set Public**: Make sure it's marked as public
-4. **Get Raw URL**: Copy the raw URL from the gist
-5. **Share**: Your users can then run:
-   ```bash
-   curl -fsSL https://gist.githubusercontent.com/USERNAME/GIST_ID/raw/install-cursor.sh | bash
-   ```
+We welcome contributions! Here's how you can help:
 
-## Support
+### 🐛 Bug Reports
+- Use the [Issues](https://github.com/jwillians/cursor-update/issues) page
+- Include system information (`lsb_release -a`)
+- Provide error logs (run with `DEBUG=1`)
 
-For issues and feature requests:
-1. **Repository Issues**: [https://github.com/jwillians/cursor-update/issues](https://github.com/jwillians/cursor-update/issues)
-2. **Check Documentation**: Review this README and troubleshooting section
-3. **Verify Latest**: Make sure you're using the newest version
+### 💡 Feature Requests
+- Check existing [Issues](https://github.com/jwillians/cursor-update/issues) first
+- Describe the use case and expected behavior
+- Consider submitting a Pull Request
 
-## License
+### 🔧 Pull Requests
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Test your changes thoroughly
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
 
-This project is open source. Check the repository for license details.
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Cursor Team](https://cursor.com) for creating an amazing AI-powered IDE
+- Ubuntu/Debian community for the excellent package management system
+- Contributors and users who help improve this installer
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/jwillians/cursor-update/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/jwillians/cursor-update/discussions)
+- **Documentation**: This README and script comments
 
 ---
 
-**🎉 Install Cursor IDE with ease!**
+<div align="center">
 
-Repository: [https://github.com/jwillians/cursor-update](https://github.com/jwillians/cursor-update) 
+**⭐ If this project helped you, please consider giving it a star! ⭐**
+
+Made with ❤️ for the developer community
+
+</div>
