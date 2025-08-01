@@ -6,7 +6,7 @@
 # Copyright (c) 2025 jwillians
 # Licensed under MIT License - see LICENSE file for details
 #
-# ⚠️  DISCLAIMER: This is an UNOFFICIAL installer created by a fan.
+# ⚠️  DISCLAIMER: This is an UNOFFICIAL installer created by a fan (Jorge Willians).
 #    NOT affiliated with, endorsed by, or officially supported by
 #    Anysphere (the creators of Cursor IDE). Use at your own risk.
 #    Cursor IDE is a trademark of Anysphere.
@@ -62,7 +62,7 @@ print_header() {
     fi
     echo -e "${BOLD}${CYAN}================================================================${NC}"
     echo
-    echo -e "${BOLD}${YELLOW}⚠️  DISCLAIMER: This is an UNOFFICIAL installer created by a fan${NC}"
+    echo -e "${BOLD}${YELLOW}⚠️  DISCLAIMER: This is an UNOFFICIAL installer created by a fan (Jorge Willians)${NC}"
     echo -e "${BOLD}${YELLOW}   NOT affiliated with Anysphere (Cursor IDE creators)${NC}"
     echo -e "${BOLD}${YELLOW}   Use at your own risk. Cursor IDE is a trademark of Anysphere.${NC}"
     echo
@@ -2302,7 +2302,7 @@ show_post_install_info() {
     print_info "Report issues at: https://github.com/jwillians/cursor-update"
     echo
     echo -e "${BOLD}${YELLOW}⚠️  IMPORTANT DISCLAIMER:${NC}"
-    echo -e "${YELLOW}   This is an UNOFFICIAL installer created by a fan community member.${NC}"
+    echo -e "${YELLOW}   This is an UNOFFICIAL installer created by a fan community member (Jorge Willians).${NC}"
     echo -e "${YELLOW}   NOT affiliated with, endorsed by, or supported by Anysphere.${NC}"
     echo -e "${YELLOW}   For official support, visit https://www.cursor.com${NC}"
     echo
