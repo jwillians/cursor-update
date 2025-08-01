@@ -212,7 +212,7 @@ install_script_to_system() {
     
     print_step "Installing script to system..."
     
-    if ask_permission "Install cursor-update command system-wide?"; then
+    if ask_permission "Install cursor-update command system-wide?" "n"; then
         local current_script="$0"
         
         # If we're running from a temp location (curl pipe), download the script properly
@@ -340,11 +340,11 @@ check_cursor_update() {
             print_info "Cursor is currently running"
         fi
         
-        if ask_permission "Update Cursor to v$latest_version now?"; then
+        if ask_permission "Update Cursor to v$latest_version now?" "n"; then
             # If Cursor is running, offer to close and reopen
             local should_reopen=false
             if [[ "$cursor_running" == true ]]; then
-                if ask_permission "Close Cursor, update, and reopen automatically?"; then
+                if ask_permission "Close Cursor, update, and reopen automatically?" "n"; then
                     should_reopen=true
                     print_info "Closing Cursor..."
                     
@@ -2324,7 +2324,7 @@ main() {
     # Check if running as root
     if [[ $EUID -eq 0 ]]; then
         print_warning "Running as root. This is not recommended for the entire installation."
-        if ! ask_permission "Continue anyway?"; then
+        if ! ask_permission "Continue anyway?" "n"; then
             print_info "Installation cancelled"
             exit 0
         fi
