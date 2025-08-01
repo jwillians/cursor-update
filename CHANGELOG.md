@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.3] - 2025-01-08
+## [1.1.3] - 2025-08-01
 
 ### 🐛 Fixed
 - **Fixed stdin availability when script is executed via curl pipe** - Menu now properly waits for user input
@@ -15,14 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🧹 Removed
 - **Removed obsolete cursor-update-test.sh** - Cleaned up outdated test file to avoid confusion
 
-## [1.1.2] - 2025-01-08
+## [1.1.2] - 2025-08-01
 
 ### 🔧 Improved
-- **Enhanced sudo logic** - Better handling of sudo requirements and permissions
+- **Enhanced sudo logic** - Only requests sudo when actually needed, avoiding unnecessary prompts
 - **Conservative update prompts** - Changed default responses to 'n' for safer automatic updates
 - **Improved installation checks** - Better validation of existing installations and user prompts
 
-## [1.1.1] - 2025-01-08
+## [1.1.1] - 2025-08-01
 
 ### ✨ Added
 - **Creator credit attribution** - Added proper attribution to Jorge Willians in disclaimers
@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Desktop integration** - Improved desktop entry cleanup and creation process
 - **Debug logging** - Enhanced debug output for better troubleshooting
 
-## [1.0.0] - 2024-12-20
+## [1.0.0] - 2025-07-30
 
 ### 🎉 Initial Release
 
@@ -92,7 +92,7 @@ cursor-update
 - **Developer-friendly** - includes debug mode and verbose logging
 
 #### 🔧 Technical Details
-- **User Agent**: `Cursor-Update/1.0.0 (Ubuntu)`
+- **User Agent**: `Cursor-Update/1.1.3 (Linux)`
 - **Python Requirements**: 3.8+
 - **System Requirements**: Ubuntu 18.04+ or Debian-based distributions
 - **Dependencies**: Auto-installed (curl, python3, libfuse2, python packages)

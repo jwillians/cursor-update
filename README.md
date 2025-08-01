@@ -2,7 +2,7 @@
 
 > **Unofficial Linux Installer & Version Manager for Cursor IDE**
 
-⚠️ **DISCLAIMER: This is an UNOFFICIAL installer created by a fan community member.**  
+⚠️ **DISCLAIMER: This is an UNOFFICIAL installer created by a fan (Jorge Willians).**  
 **NOT affiliated with, endorsed by, or officially supported by Anysphere (the creators of Cursor IDE).**  
 **Use at your own risk. Cursor IDE is a trademark of Anysphere.**  
 **For official support, visit [cursor.com](https://www.cursor.com)**
@@ -139,12 +139,17 @@ cursor-update
 The script also supports direct version management:
 
 ```bash
-# List available versions
-python3 <(curl -s https://raw.githubusercontent.com/jwillians/cursor-update/main/install-cursor.sh | grep -A 1000 "create_python_installer" | grep -B 1000 "echo.*temp_script") list
-
-# Install specific version
-./cursor-update.sh  # Choose option 4, then enter version
+# Use the interactive menu
+./cursor-update.sh  # Local script
 # Or: cursor-update  # If installed system-wide
+
+# Available menu options:
+# 1. Install latest version
+# 2. List available versions  
+# 3. List versions (force refresh)
+# 4. Install specific version
+# 5. Remove specific version
+# 6. Exit
 ```
 
 ## 🎮 After Installation
@@ -203,7 +208,7 @@ sudo apt install libfuse2
 sudo chmod +x /opt/cursor.appimage
 
 # Fix executable permissions
-chmod +x install-cursor.sh
+chmod +x cursor-update.sh
 ```
 
 #### Desktop Icon Missing
@@ -216,7 +221,7 @@ sudo update-desktop-database /usr/share/applications/
 #### Network/Download Issues
 ```bash
 # Run with debug mode
-DEBUG=1 ./install-cursor.sh
+DEBUG=1 ./cursor-update.sh
 
 # Clear cache and retry
 rm -rf ~/.local/share/cursor-installer/versions_cache.json
@@ -225,7 +230,7 @@ rm -rf ~/.local/share/cursor-installer/versions_cache.json
 ### Debug Mode
 Enable detailed logging:
 ```bash
-DEBUG=1 ./install-cursor.sh
+DEBUG=1 ./cursor-update.sh
 ```
 
 ## 🔧 Configuration
@@ -285,7 +290,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Important Legal Notice
 
-**This is an UNOFFICIAL installer created by a fan community member.**
+**This is an UNOFFICIAL installer created by a fan (Jorge Willians).**
 - **NOT affiliated with, endorsed by, or officially supported by Anysphere**
 - **Cursor IDE is a trademark of Anysphere**
 - **This installer simply automates the download and installation process using publicly available releases**
