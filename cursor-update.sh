@@ -2408,6 +2408,16 @@ main() {
     fi
     echo
     
+    # Install script to system early (if not already installed)
+    if [[ ! -f "$SYSTEM_SCRIPT_PATH" ]]; then
+        print_info "🔧 Installing cursor-update command..."
+        if install_script_to_system; then
+            print_success "cursor-update command installed successfully!"
+            print_info "You can now run: cursor-update"
+            echo
+        fi
+    fi
+    
     # Run installation steps
     print_info "🔍 Step 1/5: Detecting system..."
     detect_system
@@ -2440,10 +2450,7 @@ main() {
     print_info "🚀 Step 5/6: Running installation..."
     run_installation
     
-    print_info "🔧 Final step: Installing script to system..."
-    if ! install_script_to_system; then
-        debug_log "Script system installation skipped or failed"
-    fi
+    # Script installation was already handled earlier
     echo
     
     print_success "All done! Enjoy using Cursor IDE! 🎉"
