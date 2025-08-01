@@ -90,19 +90,6 @@ curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor
 curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/v1.0.0/cursor-update.sh | bash
 ```
 
-### 🆚 GitHub vs Gist
-
-| Feature | GitHub Raw | GitHub Gist |
-|---------|------------|-------------|
-| ✅ **Versioning** | Complete (tags, branches) | Limited |
-| ✅ **Issues/Bugs** | Yes | No |
-| ✅ **Documentation** | Full README | Basic |
-| ✅ **Collaboration** | Pull Requests | Simple forks |
-| ✅ **Releases** | Official tags | No |
-| ✅ **Statistics** | Views, stars, etc | Limited |
-
-**Recommendation:** Use GitHub for projects like this - it's more professional and offers better control.
-
 ### 🔐 Installation Security
 
 ```bash
