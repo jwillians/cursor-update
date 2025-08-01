@@ -422,7 +422,7 @@ ask_permission() {
     fi
     
     echo -e "${YELLOW}❓${NC} ${question} ${prompt}"
-    read -r response
+    read -r response </dev/tty
     
     if [[ -z "$response" ]]; then
         response="$default"
@@ -2198,7 +2198,7 @@ run_installation() {
     echo "  6) Exit"
     echo
     
-    read -p "Enter your choice [1-6]: " choice
+    read -p "Enter your choice [1-6]: " choice </dev/tty
     
     installed=false
     
@@ -2236,7 +2236,7 @@ run_installation() {
         4)
             python3 "$PYTHON_INSTALLER" list
             echo
-            read -p "Enter version to install (e.g., 1.3.4): " version
+            read -p "Enter version to install (e.g., 1.3.4): " version </dev/tty
             if [[ -n "$version" ]]; then
                 print_step "Installing Cursor v$version..."
                 if python3 "$PYTHON_INSTALLER" install "$version"; then
@@ -2249,7 +2249,7 @@ run_installation() {
         5)
             python3 "$PYTHON_INSTALLER" list
             echo
-            read -p "Enter version to remove (e.g., 1.3.4): " version
+            read -p "Enter version to remove (e.g., 1.3.4): " version </dev/tty
             if [[ -n "$version" ]]; then
                 print_step "Removing Cursor v$version..."
                 python3 "$PYTHON_INSTALLER" remove "$version"
