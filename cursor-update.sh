@@ -216,7 +216,7 @@ install_script_to_system() {
         local current_script="$0"
         
         # If we're running from a temp location (curl pipe), download the script properly
-        if [[ "$current_script" == "/dev/fd/"* ]] || [[ "$current_script" == "/proc/self/fd/"* ]]; then
+        if [[ "$current_script" == "/dev/fd/"* ]] || [[ "$current_script" == "/proc/self/fd/"* ]] || [[ "$current_script" == "bash" ]] || [[ ! -f "$current_script" ]]; then
             print_info "Downloading script for system installation..."
             local temp_script="/tmp/cursor-update.sh"
             
