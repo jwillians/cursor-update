@@ -29,7 +29,7 @@ debug_log() {
 }
 
 # Version and metadata
-INSTALLER_VERSION="1.1.1"
+INSTALLER_VERSION="1.1.2"
 SCRIPT_NAME="Cursor Update"
 SCRIPT_URL="https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh"
 SYSTEM_SCRIPT_PATH="/usr/local/bin/cursor-update"
@@ -1098,7 +1098,7 @@ class CursorInstaller:
         """Initialize the installer with session and directories."""
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Cursor-Update/1.1.1 (Linux)'
+            'User-Agent': 'Cursor-Update/1.1.2 (Linux)'
         })
         
         # Create directories
@@ -2390,29 +2390,41 @@ main() {
     fi
     echo
     
-    # Check and request sudo access early
-    print_step "Checking sudo access..."
-    if ! sudo -n true 2>/dev/null; then
-        print_info "This installer requires sudo access for system-wide installation."
-        print_info "You will be prompted for your password to proceed."
-        echo
-        if ! sudo -v; then
-            print_error "Sudo access is required for installation. Exiting."
-            exit 1
-        fi
-        print_success "Sudo access confirmed"
-    else
-        print_success "Sudo access already available"
-    fi
-    echo
+    # Check if we need to install the system command (only request sudo if needed)
+    needs_system_install=false
     
-    # Install script to system early (if not already installed)
     if [[ ! -f "$SYSTEM_SCRIPT_PATH" ]]; then
-        print_info "🔧 Installing cursor-update command..."
-        if install_script_to_system; then
-            print_success "cursor-update command installed successfully!"
-            print_info "You can now run: cursor-update"
+        needs_system_install=true
+    elif [[ -z "$current_cursor_version" ]]; then
+        # No Cursor installed, will need sudo for Cursor installation
+        needs_system_install=true
+    fi
+    
+    # Only request sudo if we actually need it
+    if [[ "$needs_system_install" == true ]]; then
+        print_step "Checking sudo access..."
+        if ! sudo -n true 2>/dev/null; then
+            print_info "This installer requires sudo access for system-wide installation."
+            print_info "You will be prompted for your password to proceed."
             echo
+            if ! sudo -v; then
+                print_error "Sudo access is required for installation. Exiting."
+                exit 1
+            fi
+            print_success "Sudo access confirmed"
+        else
+            print_success "Sudo access already available"
+        fi
+        echo
+        
+        # Install script to system (if not already installed)
+        if [[ ! -f "$SYSTEM_SCRIPT_PATH" ]]; then
+            print_info "🔧 Installing cursor-update command..."
+            if install_script_to_system; then
+                print_success "cursor-update command installed successfully!"
+                print_info "You can now run: cursor-update"
+                echo
+            fi
         fi
     fi
     
