@@ -1,13 +1,13 @@
-# 🎯 Cursor Update v1.1.0
+# 🎯 Cursor Update v1.1.1
 
-> **Professional Ubuntu Installer & Version Manager for Cursor IDE**
+> **Unofficial Linux Installer & Version Manager for Cursor IDE**
 
 ⚠️ **DISCLAIMER: This is an UNOFFICIAL installer created by a fan community member.**  
 **NOT affiliated with, endorsed by, or officially supported by Anysphere (the creators of Cursor IDE).**  
 **Use at your own risk. Cursor IDE is a trademark of Anysphere.**  
 **For official support, visit [cursor.com](https://www.cursor.com)**
 
-A comprehensive, standalone script that downloads, installs, and manages Cursor IDE versions on Ubuntu/Debian systems with advanced features like version management, desktop integration, and AI-powered development environment setup.
+A comprehensive, standalone script that downloads, installs, and manages Cursor IDE versions on Linux systems with advanced features like version management, desktop integration, and AI-powered development environment setup.
 
 ## ✨ Features
 
@@ -43,7 +43,7 @@ A comprehensive, standalone script that downloads, installs, and manages Cursor 
 ## 📋 Requirements
 
 ### System Requirements
-- **OS**: Ubuntu 18.04+ or Debian-based distributions
+- **OS**: Linux distributions (tested on Ubuntu/Debian)
 - **Architecture**: x86_64 (x64) or ARM64
 - **RAM**: 4GB minimum (8GB+ recommended)
 - **Disk Space**: ~2GB for installation and cache
@@ -270,7 +270,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [Cursor Team](https://cursor.com) for creating an amazing AI-powered IDE
-- Ubuntu/Debian community for the excellent package management system
+- Linux community for the excellent package management systems
 - Contributors and users who help improve this installer
 
 ## 📞 Support

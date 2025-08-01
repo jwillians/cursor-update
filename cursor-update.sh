@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Cursor Update - UNOFFICIAL Installer & Version Manager
-# Professional installer and version manager for Ubuntu systems
+# Unofficial Linux installer and version manager for Cursor IDE
 # 
 # Copyright (c) 2025 jwillians
 # Licensed under MIT License - see LICENSE file for details
@@ -29,7 +29,7 @@ debug_log() {
 }
 
 # Version and metadata
-INSTALLER_VERSION="1.1.0"
+INSTALLER_VERSION="1.1.1"
 SCRIPT_NAME="Cursor Update"
 SCRIPT_URL="https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh"
 SYSTEM_SCRIPT_PATH="/usr/local/bin/cursor-update"
@@ -50,7 +50,7 @@ print_header() {
     echo
     echo -e "${BOLD}${CYAN}================================================================${NC}"
     echo -e "${BOLD}${CYAN}    🎯 ${SCRIPT_NAME} v${INSTALLER_VERSION}${NC}"
-    echo -e "${BOLD}${CYAN}    Professional Ubuntu Installer & Version Manager${NC}"
+    echo -e "${BOLD}${CYAN}    Unofficial Linux Installer & Version Manager for Cursor IDE${NC}"
     echo -e "${BOLD}${CYAN}================================================================${NC}"
     
     # Show current Cursor version if available
@@ -472,7 +472,7 @@ detect_system() {
     
     # Check if Ubuntu/Debian
     if [[ "$OS_ID" != "ubuntu" && "$OS_ID" != "debian" ]]; then
-        print_warning "This installer is designed for Ubuntu/Debian systems"
+        print_warning "This installer is designed for Linux systems (tested on Ubuntu/Debian)"
         if ! ask_permission "Continue anyway?"; then
             print_info "Installation cancelled"
             exit 0
@@ -1100,7 +1100,7 @@ class CursorInstaller:
         """Initialize the installer with session and directories."""
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Cursor-Update/1.1.0 (Ubuntu)'
+            'User-Agent': 'Cursor-Update/1.1.1 (Linux)'
         })
         
         # Create directories
@@ -2369,7 +2369,7 @@ main() {
     fi
     
     # Welcome message - only shown if no update was done
-    print_info "This installer will download and install Cursor IDE on your Ubuntu system."
+    print_info "This installer will download and install Cursor IDE on your Linux system."
     print_info "It includes advanced version management and system integration."
     echo
     
