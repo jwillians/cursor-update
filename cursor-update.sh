@@ -2345,9 +2345,22 @@ main() {
     current_cursor_version=$(get_current_cursor_version)
     if [[ -n "$current_cursor_version" ]]; then
         if check_cursor_update "$current_cursor_version" 2>/dev/null; then
-            # Update was successful, exit gracefully
-            debug_log "Cursor update completed successfully - exiting"
+            # Update was successful, but still install command if needed
+            debug_log "Cursor update completed successfully - checking for command installation"
+            
+            # Install script to system if not already installed
+            if [[ ! -f "$SYSTEM_SCRIPT_PATH" ]]; then
+                print_info "🔧 Installing cursor-update command..."
+                if install_script_to_system; then
+                    print_success "cursor-update command installed successfully!"
+                fi
+            fi
+            
             print_success "All done! Enjoy using Cursor IDE! 🎉"
+            echo
+            echo -e "${BOLD}${YELLOW}📝 Remember: This is an UNOFFICIAL community tool${NC}"
+            echo -e "${YELLOW}   For official support, visit https://www.cursor.com${NC}"
+            echo -e "${YELLOW}   Licensed under MIT - see LICENSE file for details${NC}"
             exit 0
         else
             debug_log "Cursor update check completed or skipped - continuing to menu"
@@ -2414,7 +2427,7 @@ main() {
     print_info "🚀 Step 5/6: Running installation..."
     run_installation
     
-    print_info "🔧 Step 6/6: Installing script to system..."
+    print_info "🔧 Final step: Installing script to system..."
     if ! install_script_to_system; then
         debug_log "Script system installation skipped or failed"
     fi
