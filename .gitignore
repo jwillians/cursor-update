@@ -13,6 +13,12 @@ test_*
 *.swp
 *.swo
 
+# Python virtual environments
+venv/
+env/
+.venv/
+.env/
+
 # OS
 .DS_Store
 .DS_Store?

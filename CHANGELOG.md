@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2025-01-08
+
+### 🐛 Fixed
+- **Fixed stdin availability when script is executed via curl pipe** - Menu now properly waits for user input
+- **Improved interactive experience** - All read commands now redirect to /dev/tty for proper input handling
+- **Resolved script termination issue** - Script no longer exits after showing menu when piped from curl
+
+### 🧹 Removed
+- **Removed obsolete cursor-update-test.sh** - Cleaned up outdated test file to avoid confusion
+
+## [1.1.2] - 2025-01-08
+
+### 🔧 Improved
+- **Enhanced sudo logic** - Better handling of sudo requirements and permissions
+- **Conservative update prompts** - Changed default responses to 'n' for safer automatic updates
+- **Improved installation checks** - Better validation of existing installations and user prompts
+
+## [1.1.1] - 2025-01-08
+
+### ✨ Added
+- **Creator credit attribution** - Added proper attribution to Jorge Willians in disclaimers
+- **Enhanced messaging** - Improved user feedback for up-to-date Cursor installations
+- **Auto-update mechanism testing** - Version bump to validate auto-update functionality
+
+### 🐛 Fixed
+- **Command installation timing** - Fixed issues with cursor-update command installation
+- **Desktop integration** - Improved desktop entry cleanup and creation process
+- **Debug logging** - Enhanced debug output for better troubleshooting
+
 ## [1.0.0] - 2024-12-20
 
 ### 🎉 Initial Release

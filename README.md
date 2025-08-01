@@ -1,4 +1,4 @@
-# 🎯 Cursor Update v1.1.1
+# 🎯 Cursor Update v1.1.3
 
 > **Unofficial Linux Installer & Version Manager for Cursor IDE**
 
