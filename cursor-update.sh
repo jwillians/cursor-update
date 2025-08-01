@@ -2364,18 +2364,31 @@ main() {
             exit 0
         else
             debug_log "Cursor update check completed or skipped - continuing to menu"
+            
+            # Cursor is already installed and up-to-date, offer menu access
+            print_success "Cursor IDE is already at the latest version (v$current_cursor_version)! 🎉"
+            print_info "You can use the version management menu to:"
+            echo "  • List all available versions"
+            echo "  • Install/switch to specific versions"
+            echo "  • Remove old versions"
+            echo
+            
+            if ! ask_permission "Open version management menu?"; then
+                print_info "Exiting - Cursor is already up-to-date"
+                exit 0
+            fi
         fi
         echo
-    fi
-    
-    # Welcome message - only shown if no update was done
-    print_info "This installer will download and install Cursor IDE on your Linux system."
-    print_info "It includes advanced version management and system integration."
-    echo
-    
-    if ! ask_permission "Continue with installation?"; then
-        print_info "Installation cancelled by user"
-        exit 0
+    else
+        # No Cursor installation detected - show installation message
+        print_info "This installer will download and install Cursor IDE on your Linux system."
+        print_info "It includes advanced version management and system integration."
+        echo
+        
+        if ! ask_permission "Continue with installation?"; then
+            print_info "Installation cancelled by user"
+            exit 0
+        fi
     fi
     echo
     
