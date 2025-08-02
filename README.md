@@ -77,6 +77,15 @@ This comprehensive installer solves the complexity of Linux AppImage installatio
 
 ## 🚀 Quick Start
 
+### ⚠️ **Prerequisites**
+
+Before running the installer, ensure you have `curl` installed:
+
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install curl
+```
+
 ### ⚡ **One Command. That's It.**
 
 ```bash
