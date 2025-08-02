@@ -29,7 +29,7 @@ debug_log() {
 }
 
 # Version and metadata
-INSTALLER_VERSION="1.1.4"
+INSTALLER_VERSION="1.1.5"
 SCRIPT_NAME="Cursor Update"
 SCRIPT_URL="https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh"
 SYSTEM_SCRIPT_PATH="/usr/local/bin/cursor-update"
@@ -183,7 +183,9 @@ update_script() {
         # Clean up and restart with system script
         rm -f "$temp_script"
         print_info "Restarting with updated script..."
+        sleep 1
         clear
+        echo
         exec "$SYSTEM_SCRIPT_PATH" "$@"
     else
         # Replace current script if possible
@@ -194,7 +196,9 @@ update_script() {
             rm -f "$temp_script"
             print_success "Script updated successfully"
             print_info "Restarting with updated script..."
+            sleep 1
             clear
+            echo
             exec "$current_script_path" "$@"
         else
             print_warning "Cannot update current script (no write permission)"

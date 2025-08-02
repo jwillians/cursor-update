@@ -1,4 +1,4 @@
-# 🎯 Cursor Update v1.1.4
+# 🎯 Cursor Update v1.1.5
 
 > **Unofficial Linux Installer & Version Manager for Cursor IDE**
 
@@ -7,7 +7,26 @@
 **Use at your own risk. Cursor IDE is a trademark of Anysphere.**  
 **For official support, visit [cursor.com](https://www.cursor.com)**
 
-A comprehensive, standalone script that downloads, installs, and manages Cursor IDE versions on Linux systems with advanced features like version management, desktop integration, and AI-powered development environment setup.
+**The easiest way to install and manage Cursor IDE on Linux!** 🚀
+
+Instead of struggling with AppImage files and manual installation steps, get Cursor running with just **one command**:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh | bash
+```
+
+This comprehensive installer solves the complexity of Linux AppImage installations by providing automatic downloads, system integration, desktop shortcuts, and effortless updates - making Cursor as easy to install on Linux as it is on other platforms.
+
+## 🎯 Why This Project?
+
+**The Problem**: Cursor's official AppImage installation isn't beginner-friendly for Linux users. You need to:
+- Manually download AppImage files
+- Handle dependencies like libfuse2
+- Create desktop shortcuts manually  
+- Manage updates yourself
+- Deal with file permissions and integration
+
+**The Solution**: One command installs everything, with automatic updates and professional system integration - just like installers on other platforms!
 
 ## ✨ Features
 
@@ -58,12 +77,20 @@ A comprehensive, standalone script that downloads, installs, and manages Cursor 
 
 ## 🚀 Quick Start
 
-### 🚀 One-Line Installation (Recommended)
+### ⚡ **One Command. That's It.**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh | bash
 ```
 
-> **💡 Tip:** This is the fastest and safest method - similar to `curl -fsSL https://ollama.com/install.sh | sh`
+**What happens next?**
+1. 🔍 Detects your system automatically
+2. ⬇️ Downloads latest Cursor IDE  
+3. 🔧 Installs all dependencies
+4. 🖥️ Creates desktop shortcuts
+5. ✅ Ready to code with AI!
+
+> **💡 Pro Tip:** After installation, just run `cursor-update` anytime to manage versions or update!
 
 ### Manual Installation
 ```bash
@@ -141,12 +168,30 @@ The script also supports direct version management:
 
 ## 🎮 After Installation
 
-### Launch Cursor IDE
-- **Applications Menu**: Search for "Cursor"
+### 🚀 Launch Cursor IDE (3 Easy Ways)
+- **Applications Menu**: Search for "Cursor" 
 - **Terminal**: Type `cursor`
 - **Direct**: Run `/opt/cursor.appimage`
 
-### Version Management & Auto-Updates
+### ⚡ **Effortless Updates Forever**
+
+**No more manual AppImage downloads!** Just run:
+```bash
+cursor-update
+```
+
+**What you get:**
+- 🔄 Automatic update checking
+- 📱 One-click updates  
+- 🕒 Version history management
+- 🔄 Easy rollbacks
+- 📦 Zero manual work
+
+**Compare to manual process:**
+- ❌ Manual: Download → Extract → Move → Fix permissions → Update shortcuts
+- ✅ **With cursor-update**: One command does everything!
+
+### Advanced Version Management
 
 #### 🚀 Quick Management (System Command)
 ```bash
@@ -232,6 +277,26 @@ DEBUG=1 ./cursor-update.sh
 
 ### Customization
 The script automatically detects your system and configures appropriately. For custom installations, you can modify variables at the top of the script.
+
+## 🎯 Why Choose This Installer?
+
+### **For Linux Newcomers** 
+- 🚀 **One command** vs. manual AppImage hassles
+- 🔄 **Automatic updates** vs. manual re-downloads  
+- 🖥️ **Perfect desktop integration** vs. broken shortcuts
+- 🛡️ **Smart dependency handling** vs. mysterious errors
+
+### **For Experienced Users**
+- 🏠 **System-wide installation** with proper paths
+- 🔧 **Professional automation** saves time
+- 📦 **Consistent experience** across distributions
+
+### **The Bottom Line**
+> **"Why spend 15 minutes fighting AppImages when you can spend 15 seconds getting work done?"**
+
+**Try it now:** `curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh | bash`
+
+---
 
 ## 🤝 Contributing
 
