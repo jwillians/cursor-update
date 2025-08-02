@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2025-08-02
+
+### 🐛 Fixed
+- **Script update visual improvement** - Added clear screen after script self-update to give impression of complete restart
+- **Desktop entries preservation** - Fixed unnecessary removal of desktop shortcuts and shell commands when user chooses not to remove existing installations
+
 ## [1.1.3] - 2025-08-01
 
 ### 🐛 Fixed

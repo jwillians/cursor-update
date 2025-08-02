@@ -29,7 +29,7 @@ debug_log() {
 }
 
 # Version and metadata
-INSTALLER_VERSION="1.1.3"
+INSTALLER_VERSION="1.1.4"
 SCRIPT_NAME="Cursor Update"
 SCRIPT_URL="https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh"
 SYSTEM_SCRIPT_PATH="/usr/local/bin/cursor-update"
@@ -183,6 +183,7 @@ update_script() {
         # Clean up and restart with system script
         rm -f "$temp_script"
         print_info "Restarting with updated script..."
+        clear
         exec "$SYSTEM_SCRIPT_PATH" "$@"
     else
         # Replace current script if possible
@@ -193,6 +194,7 @@ update_script() {
             rm -f "$temp_script"
             print_success "Script updated successfully"
             print_info "Restarting with updated script..."
+            clear
             exec "$current_script_path" "$@"
         else
             print_warning "Cannot update current script (no write permission)"
@@ -992,10 +994,6 @@ check_existing_installations() {
         else
             print_warning "Existing installations will remain"
             print_info "This may cause conflicts or confusion about which version is active"
-            echo
-            # Even if keeping installations, we should clean up old desktop entries to avoid conflicts
-            print_info "Cleaning up old desktop entries to avoid conflicts with new installation..."
-            cleanup_old_desktop_entries
         fi
         echo
     else
@@ -2448,14 +2446,7 @@ main() {
     fi
     
     print_info "🧹 Final cleanup: Ensuring old desktop entries are removed..."
-    # Skip cleanup during updates to avoid removing fresh desktop entries
-    current_cursor_version=$(get_current_cursor_version)
-    if [[ -z "$current_cursor_version" ]]; then
-        # Only clean up if this is a fresh installation, not an update
-        cleanup_old_desktop_entries
-    else
-        print_info "Skipping desktop cleanup during update to preserve fresh entries"
-    fi
+    print_info "Skipping desktop cleanup during update to preserve fresh entries"
     
     print_info "🚀 Step 5/6: Running installation..."
     run_installation
