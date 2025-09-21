@@ -307,29 +307,40 @@ check_cursor_update() {
             print_info "🔄 Probing for latest versions..."
             # Test multiple version ranges to find latest
             local found_version=""
-            
-            # Test 1.4.x versions first (newest)
-            for patch in {0..10}; do
-                local test_version="1.4.$patch"
-                local test_url="https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/x64/Cursor-${test_version}-x86_64.AppImage"
-                if curl -s --head "$test_url" 2>/dev/null | grep -q "200 OK"; then
-                    found_version="$test_version"
-                    debug_log "Found version by probing: $test_version"
-                fi
-            done
-            
-            # If no 1.4.x found, test 1.3.x versions
-            if [[ -z "$found_version" ]]; then
-                for patch in {9..20}; do
-                    local test_version="1.3.$patch"
+
+            # Helper function to find latest patch version for a given major.minor version
+            find_latest_patch() {
+                local base_version="$1"
+                local max_patch="${2:-50}"
+                local latest_patch=""
+
+                # Test patches from highest to lowest (most recent first)
+                for patch in $(seq "$max_patch" -1 0); do
+                    local test_version="${base_version}.$patch"
                     local test_url="https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/x64/Cursor-${test_version}-x86_64.AppImage"
                     if curl -s --head "$test_url" 2>/dev/null | grep -q "200 OK"; then
-                        found_version="$test_version"
-                        debug_log "Found version by probing: $test_version"
+                        latest_patch="$patch"
+                        debug_log "Found latest patch for ${base_version}.x: $test_version"
+                        break
                     fi
                 done
-            fi
-            
+
+                echo "$latest_patch"
+            }
+
+            # Test versions from newest to oldest
+            local version_ranges=("1.8" "1.7" "1.6" "1.5" "1.4" "1.3")
+
+            for base_version in "${version_ranges[@]}"; do
+                if [[ -z "$found_version" ]]; then
+                    local latest_patch=$(find_latest_patch "$base_version" 60)
+                    if [[ -n "$latest_patch" ]]; then
+                        found_version="${base_version}.$latest_patch"
+                        debug_log "Found version by probing: $found_version"
+                    fi
+                fi
+            done
+
             latest_version="$found_version"
         fi
     fi
