@@ -292,56 +292,26 @@ check_cursor_update() {
         print_info "🔄 Trying direct API fallbacks..."
         
         # Try official Cursor API
-        latest_version=$(curl -s "https://www.cursor.com/api/download?platform=linux-x64&releaseTrack=stable" 2>/dev/null | grep -o '"version":"[^"]*"' | sed 's/"version":"\([^"]*\)"/\1/')
+        latest_version=$(curl -s --connect-timeout 5 --max-time 10 "https://www.cursor.com/api/download?platform=linux-x64&releaseTrack=stable" 2>/dev/null | grep -o '"version":"[^"]*"' | sed 's/"version":"\([^"]*\)"/\1/')
         debug_log "Official API version: $latest_version"
         
         # If still no version, try GitHub releases API
         if [[ -z "$latest_version" ]]; then
             print_info "🔄 Trying GitHub releases API..."
-            latest_version=$(curl -s "https://api.github.com/repos/getcursor/cursor/releases/latest" 2>/dev/null | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/' | sed 's/v//')
+            latest_version=$(curl -s --connect-timeout 5 --max-time 10 "https://api.github.com/repos/getcursor/cursor/releases/latest" 2>/dev/null | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/' | sed 's/v//')
             debug_log "GitHub API version: $latest_version"
         fi
         
-        # Try alternative version check by probing download URLs
+        # Try alternative version check using the new download endpoint
         if [[ -z "$latest_version" ]]; then
-            print_info "🔄 Probing for latest versions..."
-            # Test multiple version ranges to find latest
-            local found_version=""
-
-            # Helper function to find latest patch version for a given major.minor version
-            find_latest_patch() {
-                local base_version="$1"
-                local max_patch="${2:-50}"
-                local latest_patch=""
-
-                # Test patches from highest to lowest (most recent first)
-                for patch in $(seq "$max_patch" -1 0); do
-                    local test_version="${base_version}.$patch"
-                    local test_url="https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/x64/Cursor-${test_version}-x86_64.AppImage"
-                    if curl -s --head "$test_url" 2>/dev/null | grep -q "200 OK"; then
-                        latest_patch="$patch"
-                        debug_log "Found latest patch for ${base_version}.x: $test_version"
-                        break
-                    fi
-                done
-
-                echo "$latest_patch"
-            }
-
-            # Test versions from newest to oldest
-            local version_ranges=("1.8" "1.7" "1.6" "1.5" "1.4" "1.3")
-
-            for base_version in "${version_ranges[@]}"; do
-                if [[ -z "$found_version" ]]; then
-                    local latest_patch=$(find_latest_patch "$base_version" 60)
-                    if [[ -n "$latest_patch" ]]; then
-                        found_version="${base_version}.$latest_patch"
-                        debug_log "Found version by probing: $found_version"
-                    fi
-                fi
-            done
-
-            latest_version="$found_version"
+            print_info "🔄 Checking latest download URL..."
+            # The new Cursor system uses a redirect that contains the version
+            local redirect_url=$(curl -s --head --connect-timeout 5 --max-time 10 "https://downloader.cursor.sh/linux/appImage/x64" 2>/dev/null | grep -i "location:" | cut -d' ' -f2 | tr -d '\r')
+            if [[ -n "$redirect_url" ]]; then
+                # Extract version from URL like: https://cursor-releases.s3.us-east-1.amazonaws.com/Cursor-0.42.4-x86_64.AppImage
+                latest_version=$(echo "$redirect_url" | grep -oE 'Cursor-[0-9]+\.[0-9]+\.[0-9]+' | sed 's/Cursor-//')
+                debug_log "Found version from download URL: $latest_version"
+            fi
         fi
     fi
     
