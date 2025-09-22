@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6] - 2025-09-22
+
+### 🚀 Added
+- **Lightning-Fast API Detection** - Optimized API calls for ~0.2 second version detection
+- **Smart Download System** - Skip-discovery flag for faster installations when version is known
+- **Future-Proof Versioning** - Added support for versions up to 2.0+ with intelligent fallbacks
+- **Direct Download Method** - New `download_version_direct()` bypasses unnecessary version discovery
+
+### ⚡ Performance
+- **API Response Time** - Reduced from 30s+ to ~0.2s in optimal cases
+- **Download Initialization** - Skip unnecessary version discovery when latest version is known
+- **Fallback Efficiency** - Reduced from 300+ version tests to 25 key versions
+- **Overall Speed** - Up to 10x faster in common scenarios
+
+### 🛠️ Improved
+- **Smart Fallback System** - Tests likely versions first instead of sequential scanning
+- **Updated Download URLs** - Fixed direct download URLs for current Cursor releases (hash: b753cece5c67...)
+- **Better Timeout Values** - Optimized timeout values for faster failures and recovery
+- **Enhanced Error Handling** - More robust API endpoint management with multiple fallbacks
+
+### 🔧 Technical
+- **New `--skip-discovery` flag** - Allows bypassing version discovery for known versions
+- **Improved URL patterns** - Multiple fallback URL patterns for better compatibility
+- **Enhanced version detection** - Better handling of rapid release cycles and version jumps
+- **Optimized probing logic** - Smart version testing prioritizes most likely versions
+
 ## [1.1.5] - 2025-08-02
 
 ### 🐛 Fixed

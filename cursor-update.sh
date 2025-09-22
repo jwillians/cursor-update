@@ -29,7 +29,7 @@ debug_log() {
 }
 
 # Version and metadata
-INSTALLER_VERSION="1.1.5"
+INSTALLER_VERSION="1.1.6"
 SCRIPT_NAME="Cursor Update"
 SCRIPT_URL="https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh"
 SYSTEM_SCRIPT_PATH="/usr/local/bin/cursor-update"
@@ -269,66 +269,60 @@ check_cursor_update() {
     print_step "Checking for Cursor updates..."
     print_info "Current Cursor version: v$current_version"
     
-    # Create Python installer to check latest version
-    local temp_script="/tmp/cursor_version_check_$$.py"
-    create_python_installer > /dev/null
-    local python_installer=$(create_python_installer)
-    
-    # Get latest available version
+    # Get latest available version directly from API (fastest method)
     local latest_version=""
-    if [[ -f "$python_installer" ]]; then
-        print_info "🔍 Fetching latest Cursor version from API..."
-        # Add debug output to understand what's happening
-        local version_output=$(timeout 30 python3 "$python_installer" list 2>&1 | head -10)
-        debug_log "Version check output: $version_output"
-        
-        latest_version=$(echo "$version_output" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | sed 's/v//')
-        debug_log "Extracted latest version: $latest_version"
-        rm -f "$python_installer"
+    print_info "🔍 Fetching latest Cursor version from API..."
+    
+    # Try official Cursor API first (fastest)
+    latest_version=$(timeout 8 curl -sL --max-time 6 "https://www.cursor.com/api/download?platform=linux-x64&releaseTrack=stable" 2>/dev/null | sed -n 's/.*Cursor-\([0-9]\+\.[0-9]\+\.[0-9]\+\)-.*/\1/p' | head -1)
+    debug_log "Direct API version: $latest_version"
+    
+    # If direct API fails, try GitHub API as backup
+    if [[ -z "$latest_version" ]]; then
+        print_info "🔄 Trying GitHub API..."
+        latest_version=$(timeout 6 curl -s --max-time 4 "https://api.github.com/repos/getcursor/cursor/releases/latest" 2>/dev/null | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/' | sed 's/v//')
+        debug_log "GitHub API version: $latest_version"
     fi
     
-    # If no version found, try multiple API fallbacks
+    # If APIs fail, use Python installer as final fallback
     if [[ -z "$latest_version" ]]; then
-        print_info "🔄 Trying direct API fallbacks..."
-        
-        # Try official Cursor API
-        latest_version=$(curl -s "https://www.cursor.com/api/download?platform=linux-x64&releaseTrack=stable" 2>/dev/null | grep -o '"version":"[^"]*"' | sed 's/"version":"\([^"]*\)"/\1/')
-        debug_log "Official API version: $latest_version"
-        
-        # If still no version, try GitHub releases API
-        if [[ -z "$latest_version" ]]; then
-            print_info "🔄 Trying GitHub releases API..."
-            latest_version=$(curl -s "https://api.github.com/repos/getcursor/cursor/releases/latest" 2>/dev/null | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/' | sed 's/v//')
-            debug_log "GitHub API version: $latest_version"
+        print_info "🔄 Using Python installer fallback..."
+        local python_installer=$(create_python_installer)
+        if [[ -f "$python_installer" ]]; then
+            local version_output=$(timeout 15 python3 "$python_installer" list 2>&1 | head -5)
+            latest_version=$(echo "$version_output" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1 | sed 's/v//')
+            debug_log "Python installer version: $latest_version"
+            rm -f "$python_installer"
         fi
         
-        # Try alternative version check by probing download URLs
+        # Try alternative version check by probing download URLs (optimized - test key versions only)
         if [[ -z "$latest_version" ]]; then
-            print_info "🔄 Probing for latest versions..."
-            # Test multiple version ranges to find latest
+            print_info "🔄 Quick probing for recent versions..."
             local found_version=""
             
-            # Test 1.4.x versions first (newest)
-            for patch in {0..10}; do
-                local test_version="1.4.$patch"
+            # Smart probing: test only likely versions in reverse order (newest first)
+            local test_versions=(
+                # Test potential major jumps first
+                "2.0.5" "2.0.0" 
+                "1.9.10" "1.9.5" "1.9.0"
+                "1.8.10" "1.8.5" "1.8.0" 
+                "1.7.10" "1.7.5" "1.7.0"
+                # Test recent 1.6.x versions (most likely)
+                "1.6.50" "1.6.45" "1.6.40" "1.6.35" "1.6.30" "1.6.25" "1.6.20"
+                # Test some 1.5.x as fallback
+                "1.5.20" "1.5.15" "1.5.10" "1.5.5" "1.5.0"
+                # Quick 1.4.x test
+                "1.4.10" "1.4.5" "1.4.0"
+            )
+            
+            for test_version in "${test_versions[@]}"; do
                 local test_url="https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/x64/Cursor-${test_version}-x86_64.AppImage"
-                if curl -s --head "$test_url" 2>/dev/null | grep -q "200 OK"; then
+                if timeout 5 curl -s --max-time 3 --head "$test_url" 2>/dev/null | grep -q "200 OK"; then
                     found_version="$test_version"
-                    debug_log "Found version by probing: $test_version"
+                    debug_log "Found version by smart probing: $test_version"
+                    break # Stop at first found version (newest)
                 fi
             done
-            
-            # If no 1.4.x found, test 1.3.x versions
-            if [[ -z "$found_version" ]]; then
-                for patch in {9..20}; do
-                    local test_version="1.3.$patch"
-                    local test_url="https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/x64/Cursor-${test_version}-x86_64.AppImage"
-                    if curl -s --head "$test_url" 2>/dev/null | grep -q "200 OK"; then
-                        found_version="$test_version"
-                        debug_log "Found version by probing: $test_version"
-                    fi
-                done
-            fi
             
             latest_version="$found_version"
         fi
@@ -380,7 +374,8 @@ check_cursor_update() {
             print_step "Updating Cursor to v$latest_version..."
             local python_installer=$(create_python_installer)
             
-            if python3 "$python_installer" install "$latest_version"; then
+            # Use --skip-discovery to avoid unnecessary probing when we know the version
+            if python3 "$python_installer" install "$latest_version" --skip-discovery; then
                 rm -f "$python_installer"
                 print_success "Cursor updated successfully to v$latest_version!"
                 
@@ -1198,23 +1193,30 @@ class CursorInstaller:
             try:
                 self.print_info(f"🔍 Fetching latest version from API: {api_url}")
                 
-                response = self.session.get(api_url, timeout=10)
+                response = self.session.get(api_url, timeout=6)
                 response.raise_for_status()
                 
-                data = response.json()
-                
                 # Handle different API response formats
-                if 'downloadUrl' in data and 'version' in data:
-                    # Official Cursor API format
-                    version_str = data.get('version')
-                    download_url = data.get('downloadUrl')
-                elif 'tag_name' in data:
-                    # GitHub API format
-                    version_str = data.get('tag_name', '').replace('v', '')
-                    # Construct download URL for GitHub releases
-                    download_url = f"https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/x64/Cursor-{version_str}-x86_64.AppImage"
+                if 'cursor.com/api/download' in api_url:
+                    # Official Cursor API now returns HTML, extract version from download URLs
+                    import re
+                    text = response.text
+                    version_match = re.search(r'Cursor-(\d+\.\d+\.\d+)-', text)
+                    if version_match:
+                        version_str = version_match.group(1)
+                        # Construct download URL for the detected version
+                        download_url = f"https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/x64/Cursor-{version_str}-x86_64.AppImage"
+                    else:
+                        continue
                 else:
-                    continue
+                    # GitHub API still returns JSON
+                    data = response.json()
+                    if 'tag_name' in data:
+                        version_str = data.get('tag_name', '').replace('v', '')
+                        # Construct download URL for GitHub releases
+                        download_url = f"https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/x64/Cursor-{version_str}-x86_64.AppImage"
+                    else:
+                        continue
                 
                 if version_str:
                     self.print_success(f"Found latest version from API: v{version_str}")
@@ -1257,14 +1259,20 @@ class CursorInstaller:
         # Only do extensive probing if we don't have the API version
         if not latest_from_api:
             self.print_warning("API failed, falling back to probing method...")
-            # Version series to test (from newest to oldest, expanded ranges for latest versions)
+            # Version series to test (from newest to oldest, supporting up to 2.x versions)
             version_series = [
-                # Test potential newer versions first
-                {"major": 1, "minor": 4, "patch_range": range(0, 10)}, # 1.4.0 - 1.4.9
-                {"major": 1, "minor": 3, "patch_range": range(0, 20)}, # 1.3.0 - 1.3.19 (expanded)
-                {"major": 1, "minor": 2, "patch_range": range(0, 15)}, # 1.2.0 - 1.2.14 (expanded)
-                {"major": 1, "minor": 1, "patch_range": range(0, 10)}, # 1.1.0 - 1.1.9
-                {"major": 1, "minor": 0, "patch_range": range(0, 10)}, # 1.0.0 - 1.0.9
+                # Test potential major version jumps first
+                {"major": 2, "minor": 0, "patch_range": range(0, 21)}, # 2.0.0 - 2.0.20
+                {"major": 1, "minor": 9, "patch_range": range(0, 51)}, # 1.9.0 - 1.9.50 (they might skip to 1.9)
+                {"major": 1, "minor": 8, "patch_range": range(0, 51)}, # 1.8.0 - 1.8.50
+                {"major": 1, "minor": 7, "patch_range": range(0, 51)}, # 1.7.0 - 1.7.50
+                {"major": 1, "minor": 6, "patch_range": range(20, 101)}, # 1.6.20 - 1.6.100 (extended)
+                {"major": 1, "minor": 5, "patch_range": range(0, 51)}, # 1.5.0 - 1.5.50 (expanded)
+                {"major": 1, "minor": 4, "patch_range": range(0, 31)}, # 1.4.0 - 1.4.30 (expanded)
+                {"major": 1, "minor": 3, "patch_range": range(0, 31)}, # 1.3.0 - 1.3.30 (expanded)
+                {"major": 1, "minor": 2, "patch_range": range(0, 21)}, # 1.2.0 - 1.2.20 (expanded)
+                {"major": 1, "minor": 1, "patch_range": range(0, 15)}, # 1.1.0 - 1.1.14
+                {"major": 1, "minor": 0, "patch_range": range(0, 15)}, # 1.0.0 - 1.0.14
             ]
             
             for series in version_series:
@@ -1288,11 +1296,17 @@ class CursorInstaller:
             # We have the latest from API, probe for newer versions and recent stable ones
             self.print_info("API provided latest version, probing for newer and stable versions...")
             recent_versions = [
-                # Test potential newer versions first
-                "1.4.5", "1.4.4", "1.4.3", "1.4.2", "1.4.1", "1.4.0",
-                "1.3.15", "1.3.14", "1.3.13", "1.3.12", "1.3.11", "1.3.10", "1.3.9",
-                "1.3.8", "1.3.7", "1.3.6", "1.3.5", "1.3.4", "1.3.3", "1.3.2", "1.3.1", "1.3.0",
-                "1.2.9", "1.2.8", "1.2.7"
+                # Test potential major version jumps and future versions first
+                "2.0.10", "2.0.9", "2.0.8", "2.0.7", "2.0.6", "2.0.5", "2.0.4", "2.0.3", "2.0.2", "2.0.1", "2.0.0",
+                "1.9.30", "1.9.25", "1.9.20", "1.9.15", "1.9.10", "1.9.5", "1.9.0",
+                "1.8.30", "1.8.25", "1.8.20", "1.8.15", "1.8.10", "1.8.5", "1.8.0",
+                "1.7.30", "1.7.25", "1.7.20", "1.7.15", "1.7.10", "1.7.5", "1.7.0",
+                "1.6.80", "1.6.75", "1.6.70", "1.6.65", "1.6.60", "1.6.55", "1.6.50", "1.6.45",
+                "1.6.40", "1.6.39", "1.6.38", "1.6.37", "1.6.36", "1.6.35", "1.6.34", "1.6.33", "1.6.32", "1.6.31", "1.6.30",
+                "1.6.29", "1.6.28", "1.6.27", "1.6.26", "1.6.25", "1.6.24", "1.6.23", "1.6.22", "1.6.21", "1.6.20",
+                "1.5.30", "1.5.25", "1.5.20", "1.5.15", "1.5.10", "1.5.5", "1.5.0",
+                "1.4.15", "1.4.10", "1.4.5", "1.4.0",
+                "1.3.20", "1.3.15", "1.3.10"
             ]
             for version in recent_versions:
                 if self._test_version(version, url_patterns, arch_path, arch_suffix):
@@ -1596,6 +1610,75 @@ class CursorInstaller:
             if destination.exists():
                 destination.unlink()
             return False
+
+    def download_version_direct(self, version: str, destination: Path = None) -> bool:
+        """Download a specific version directly without version discovery (faster)."""
+        self.print_info(f"⚡ Fast download: v{version}")
+        
+        # Construct download URL directly
+        arch = self.detect_architecture()
+        arch_suffix = 'x86_64' if arch == 'x64' else 'arm64'
+        arch_path = 'x64' if arch == 'x64' else 'arm64'
+        filename = f"Cursor-{version}-{arch_suffix}.AppImage"
+        
+        # Try multiple URL patterns (use current hash from API)
+        url_patterns = [
+            f"https://downloads.cursor.com/production/b753cece5c67c47cb5637199a5a5de2b7100c18f/linux/{arch_path}/Cursor-{version}-{arch_suffix}.AppImage",
+            f"https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/{arch_path}/Cursor-{version}-{arch_suffix}.AppImage"
+        ]
+        
+        if destination is None:
+            destination = self.DOWNLOADS_DIR / filename
+        else:
+            destination = Path(destination)
+            
+        # Check if already downloaded
+        if destination.exists():
+            self.print_warning(f"Version {version} already downloaded at {destination}")
+            return True
+            
+        # Ensure destination directory exists
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Try each URL pattern
+        for download_url in url_patterns:
+            try:
+                self.print_info(f"🔗 Downloading: {download_url}")
+                
+                # Download the file
+                response = self.session.get(download_url, stream=True, timeout=30)
+                response.raise_for_status()
+                
+                total_size = int(response.headers.get('content-length', 0))
+                downloaded = 0
+                
+                with open(destination, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+                            downloaded += len(chunk)
+                            if total_size > 0:
+                                progress = (downloaded / total_size) * 100
+                                speed = downloaded / (1024 * 1024)  # MB downloaded
+                                print(f"\r{Colors.BLUE}ℹ{Colors.NC} Progress: {progress:.1f}% ({speed:.1f} MB downloaded)", end='', flush=True)
+                
+                print()  # New line after progress
+                
+                # Make executable
+                destination.chmod(0o755)
+                
+                self.print_success(f"Downloaded Cursor v{version} to {destination}")
+                return True
+                
+            except Exception as e:
+                self.print_debug(f"URL failed: {download_url} - {e}")
+                if destination.exists():
+                    destination.unlink()
+                continue
+                
+        # If direct download fails, fallback to regular method
+        self.print_warning("Direct download failed, falling back to version discovery...")
+        return self.download_version(version, destination)
 
     def use_version(self, version: str) -> bool:
         """Switch to a specific downloaded version."""
@@ -2130,6 +2213,7 @@ def main():
                        help='Action to perform')
     parser.add_argument('version', nargs='?', help='Version to download/install/use/remove')
     parser.add_argument('--force', action='store_true', help='Force installation')
+    parser.add_argument('--skip-discovery', action='store_true', help='Skip version discovery for faster installation')
     
     args = parser.parse_args()
     
@@ -2147,9 +2231,14 @@ def main():
         success = False
         if args.version:
             # Download specific version then install
-            if installer.download_version(args.version):
-                if installer.use_version(args.version):
-                    success = installer._install_system_wide(args.version, args.force)
+            if args.skip_discovery:
+                # Fast path: skip version discovery, download directly
+                success = installer.download_version_direct(args.version) and installer.use_version(args.version) and installer._install_system_wide(args.version, args.force)
+            else:
+                # Normal path: with version discovery
+                if installer.download_version(args.version):
+                    if installer.use_version(args.version):
+                        success = installer._install_system_wide(args.version, args.force)
         else:
             success = installer.install_latest(args.force)
         if not success:

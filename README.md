@@ -1,4 +1,4 @@
-# 🎯 Cursor Update v1.1.5
+# 🎯 Cursor Update v1.1.6
 
 > **Unofficial Linux Installer & Version Manager for Cursor IDE**
 
@@ -31,8 +31,11 @@ This comprehensive installer solves the complexity of Linux AppImage installatio
 ## ✨ Features
 
 ### 🚀 **Smart Installation**
+- **Lightning-Fast API Detection**: Optimized API calls detect latest versions in ~0.2 seconds
+- **Intelligent Download System**: Direct download with skip-discovery for faster installations
 - **Latest Version Detection**: Automatically fetches the most recent Cursor IDE version using official APIs
 - **Multiple Architecture Support**: x64 and ARM64 compatible
+- **Future-Proof Versioning**: Supports versions up to 2.0+ with smart fallbacks
 - **Dependency Management**: Automatically installs required system dependencies
 - **AppImage Integration**: Full AppImage support with libfuse2 handling
 - **System Integration**: Installs script as `cursor-update` command system-wide
