@@ -310,24 +310,6 @@ The script automatically detects your system and configures appropriately. For c
 
 ---
 
-## 📋 Recent Updates
-
-### 🚀 **v1.1.6 - Performance & Future-Proofing Update**
-- **⚡ Lightning-Fast Detection**: Optimized API calls for ~0.2 second version detection
-- **🎯 Smart Download System**: Skip-discovery flag for faster installations when version is known
-- **🔮 Future-Proof Versioning**: Added support for versions up to 2.0+ with intelligent fallbacks
-- **🛠️ Improved Fallbacks**: Smart probing tests key versions instead of hundreds sequentially
-- **🔗 Updated Download URLs**: Fixed direct download URLs for current Cursor releases
-- **⏱️ Better Timeouts**: Optimized timeout values for faster failures and recovery
-
-### 📈 **Performance Improvements**
-- **API Response Time**: Reduced from 30s+ to ~0.2s in optimal cases
-- **Download Initialization**: Skip unnecessary version discovery when latest version is known
-- **Fallback Efficiency**: Reduced from 300+ version tests to 25 key versions
-- **Overall Speed**: Up to 10x faster in common scenarios
-
----
-
 ## 🤝 Contributing
 
 We welcome contributions! Here's how you can help:
