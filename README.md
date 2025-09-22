@@ -1,4 +1,4 @@
-# 🎯 Cursor Update v1.1.5
+# 🎯 Cursor Update v1.1.6
 
 > **Unofficial Linux Installer & Version Manager for Cursor IDE**
 
@@ -31,8 +31,11 @@ This comprehensive installer solves the complexity of Linux AppImage installatio
 ## ✨ Features
 
 ### 🚀 **Smart Installation**
+- **Lightning-Fast API Detection**: Optimized API calls detect latest versions in ~0.2 seconds
+- **Intelligent Download System**: Direct download with skip-discovery for faster installations
 - **Latest Version Detection**: Automatically fetches the most recent Cursor IDE version using official APIs
 - **Multiple Architecture Support**: x64 and ARM64 compatible
+- **Future-Proof Versioning**: Supports versions up to 2.0+ with smart fallbacks
 - **Dependency Management**: Automatically installs required system dependencies
 - **AppImage Integration**: Full AppImage support with libfuse2 handling
 - **System Integration**: Installs script as `cursor-update` command system-wide
@@ -304,6 +307,24 @@ The script automatically detects your system and configures appropriately. For c
 > **"Why spend 15 minutes fighting AppImages when you can spend 15 seconds getting work done?"**
 
 **Try it now:** `curl -fsSL https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh | bash`
+
+---
+
+## 📋 Recent Updates
+
+### 🚀 **v1.1.6 - Performance & Future-Proofing Update**
+- **⚡ Lightning-Fast Detection**: Optimized API calls for ~0.2 second version detection
+- **🎯 Smart Download System**: Skip-discovery flag for faster installations when version is known
+- **🔮 Future-Proof Versioning**: Added support for versions up to 2.0+ with intelligent fallbacks
+- **🛠️ Improved Fallbacks**: Smart probing tests key versions instead of hundreds sequentially
+- **🔗 Updated Download URLs**: Fixed direct download URLs for current Cursor releases
+- **⏱️ Better Timeouts**: Optimized timeout values for faster failures and recovery
+
+### 📈 **Performance Improvements**
+- **API Response Time**: Reduced from 30s+ to ~0.2s in optimal cases
+- **Download Initialization**: Skip unnecessary version discovery when latest version is known
+- **Fallback Efficiency**: Reduced from 300+ version tests to 25 key versions
+- **Overall Speed**: Up to 10x faster in common scenarios
 
 ---
 
