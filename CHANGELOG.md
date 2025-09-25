@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.7] - 2025-09-25
+
+### 🐛 Fixed
+- **Dynamic Hash Extraction** - Fixed bug where script detected new versions but failed to download due to hardcoded hash URLs
+- **API Hash Synchronization** - Script now extracts current hash from API response instead of using outdated hardcoded values
+- **Version Download Reliability** - Fixed "Failed to update Cursor" error when newer versions were available but download URLs were invalid
+
+### 🛠️ Technical
+- **New `_get_current_hash_from_api()` method** - Dynamically extracts current hash from Cursor API
+- **Updated `download_version_direct()`** - Uses dynamic hash for reliable downloads
+- **Hash Fallback System** - Maintains compatibility with fallback hash if API extraction fails
+
 ## [1.1.6] - 2025-09-22
 
 ### 🚀 Added
