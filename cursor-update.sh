@@ -1095,7 +1095,7 @@ class CursorInstaller:
         """Initialize the installer with session and directories."""
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Cursor-Update/1.1.2 (Linux)'
+            'User-Agent': 'Cursor-Update/1.1.7 (Linux)'
         })
         
         # Create directories
