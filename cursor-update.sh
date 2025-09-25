@@ -29,7 +29,7 @@ debug_log() {
 }
 
 # Version and metadata
-INSTALLER_VERSION="1.1.6"
+INSTALLER_VERSION="1.1.7"
 SCRIPT_NAME="Cursor Update"
 SCRIPT_URL="https://raw.githubusercontent.com/jwillians/cursor-update/main/cursor-update.sh"
 SYSTEM_SCRIPT_PATH="/usr/local/bin/cursor-update"
@@ -1095,7 +1095,7 @@ class CursorInstaller:
         """Initialize the installer with session and directories."""
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Cursor-Update/1.1.2 (Linux)'
+            'User-Agent': 'Cursor-Update/1.1.7 (Linux)'
         })
         
         # Create directories
@@ -1611,20 +1611,44 @@ class CursorInstaller:
                 destination.unlink()
             return False
 
+    def _get_current_hash_from_api(self) -> str:
+        """Get the current hash from Cursor's API for download URLs."""
+        try:
+            arch = self.detect_architecture()
+            platform = 'linux-x64' if arch == 'x64' else 'linux-arm64'
+
+            response = self.session.get(f"https://www.cursor.com/api/download?platform={platform}&releaseTrack=stable", timeout=6)
+            response.raise_for_status()
+
+            # Extract hash from URL patterns in response
+            import re
+            hash_match = re.search(r'production/([a-f0-9]{40})', response.text)
+            if hash_match:
+                return hash_match.group(1)
+        except Exception as e:
+            self.print_debug(f"Failed to get hash from API: {e}")
+
+        return None
+
     def download_version_direct(self, version: str, destination: Path = None) -> bool:
         """Download a specific version directly without version discovery (faster)."""
         self.print_info(f"⚡ Fast download: v{version}")
-        
+
         # Construct download URL directly
         arch = self.detect_architecture()
         arch_suffix = 'x86_64' if arch == 'x64' else 'arm64'
         arch_path = 'x64' if arch == 'x64' else 'arm64'
         filename = f"Cursor-{version}-{arch_suffix}.AppImage"
-        
-        # Try multiple URL patterns (use current hash from API)
+
+        # Get the current hash from API for the version
+        current_hash = self._get_current_hash_from_api()
+        if not current_hash:
+            self.print_warning("Could not get current hash from API, using fallback")
+            current_hash = "b753cece5c67c47cb5637199a5a5de2b7100c18f"  # Fallback
+
+        # Try URL pattern with current hash
         url_patterns = [
-            f"https://downloads.cursor.com/production/b753cece5c67c47cb5637199a5a5de2b7100c18f/linux/{arch_path}/Cursor-{version}-{arch_suffix}.AppImage",
-            f"https://downloads.cursor.com/production/a1fa6fc7d2c2f520293aad84aaa38d091dee6fef/linux/{arch_path}/Cursor-{version}-{arch_suffix}.AppImage"
+            f"https://downloads.cursor.com/production/{current_hash}/linux/{arch_path}/Cursor-{version}-{arch_suffix}.AppImage"
         ]
         
         if destination is None:
